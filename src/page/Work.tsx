@@ -9,8 +9,8 @@ const settimer = ((count: number) => {
     return `${h}時間${m}分${s}秒`
 });
 
-//作業時間のランキングを作るなら秒数をローカルストレージで管理して比較
-//HomeでsetTimer関数を使えるかも
+//Q:作業時間のランキングを作るなら秒数をローカルストレージ他で管理して比較するかしないか
+//もし比較するならHomeでsetTimer関数を使えるかも
 
 const Work = () => {
     const [counter, setCount] = useState(0);
@@ -23,10 +23,18 @@ const Work = () => {
         return () => clearInterval(interval);
     }, []);
 
+    //ローカルストレージに保存する用
+    const endWork = (() => {
+        const maxcount = localStorage.getItem('maccount');
+        if (!maxcount || Number(maxcount) < counter) {
+            localStorage.setItem('maxcount', String(counter))
+        }
+    })
 
     return (
         <>
             <div id='timer'>{settimer(counter)}</div>
+            <button onClick={(() => { endWork() })}>終了</button>
         </>
     )
 }
