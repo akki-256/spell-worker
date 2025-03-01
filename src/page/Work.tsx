@@ -24,6 +24,7 @@ const Work = () => {
     }, []);
 
     //ローカルストレージに保存する用
+    // 作業終了時一番作業時間が一番の場合保存するだけ
     const endWork = (() => {
         const maxcount = localStorage.getItem('maccount');
         if (!maxcount || Number(maxcount) < counter) {
