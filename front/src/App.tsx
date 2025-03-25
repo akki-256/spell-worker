@@ -46,9 +46,9 @@ const App = () => {
   useEffect(() => {
     console.log('初回レンダリング')
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
-    nitroSocketRef.current = setServer('ws://localhost:spell', setnitroRes)
+    nitroSocketRef.current = setServer('ws://localhost:3000/spell', setnitroRes)
     // handStick.current = setServer('ws://handstick', sethandingStick)
-    const sendUsedSpell = setServer('ws://localhost:setup')
+    const sendUsedSpell = setServer('ws://localhost:3000/:setup')
     sendUsedSpell.send(JSON.stringify(usedSpell))
     pySocketRef.current = setServer('ws://localhost:8000/ws', setPyres)
     const startRecording = async () => {
@@ -67,6 +67,7 @@ const App = () => {
   }, [])
 
   useEffect(() => {
+    console.log('finaltrancsript')
     //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
     if ((dispState === 'start') && nitroRes?.isMoving && (finalTranscript.includes('スペルワーカー'))) {
       setDispState('work')
@@ -75,8 +76,9 @@ const App = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-
+    console.log(nitroSocketRef.current?.readyState)
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
+      console.log('nitro送信')
       const sendMessage = finalTranscript.replace(/\s+/g, '')
       nitroSocketRef.current?.send(sendMessage)
       resetTranscript();
