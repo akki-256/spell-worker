@@ -11,14 +11,15 @@ export default defineWebSocketHandler({
   message: async (peer, message) => {
     const userSpell: string = await message.json();
     const correctSpell: CorrectSpell = getCorrectSpell();
+    const isMoving: boolean = getIsMoving();
 
-    const magicSuccess = getIsMoving()
+    const magicSuccess = isMoving
       ? spellChecker(userSpell, correctSpell.jsontype)
       : null;
 
     peer.send({
       user: "server",
-      message: magicSuccess,
+      message: { magicSuccess: magicSuccess, isMoving: isMoving },
     });
   },
   close(peer) {
