@@ -46,7 +46,7 @@ const App = () => {
   useEffect(() => {
     console.log('初回レンダリング')
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
-    nitroSocketRef.current = setServer('ws://spell', setnitroRes)
+    nitroSocketRef.current = setServer('ws://localhost:spell', setnitroRes)
     // handStick.current = setServer('ws://handstick', sethandingStick)
     const sendUsedSpell = setServer('ws://localhost:setup')
     sendUsedSpell.send(JSON.stringify(usedSpell))
