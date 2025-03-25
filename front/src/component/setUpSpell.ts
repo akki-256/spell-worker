@@ -20,7 +20,7 @@ const setUpSpell = (numberOfSpell: number) => {
     // シャッフルして先頭から引数分だけ取得
     const shuffledEntries = shuffle(entries).slice(0, numberOfSpell);
     //objectに変換、このときキーはvoid1,void2....に設定
-    const result: Record<string, { kata: string; kana: string }> = {};
+    const result: Record<string, string> = {};
     shuffledEntries.forEach((spell, index) => {
         const key = `void${index + 1}`
         result[key] = spell[1]

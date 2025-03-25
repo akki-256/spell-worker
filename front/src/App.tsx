@@ -4,26 +4,29 @@ import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognitio
 import setServer from './component/setServer'
 import setUpSpell from './component/setUpSpell'
 import useSound from 'use-sound'
-import defaultAlarmSound from '../tmp.mp3'
+import defaultAlarmSound from '../default-alarm-sound.mp3'
 
 const settimer = ((count: number) => {
   let h = Math.floor(count / 3600).toString()
   let m = Math.floor((count / 60) % 60).toString().padStart(2, '0')
   let s = Math.floor(count % 60).toString().padStart(2, '0')
-  return `${h}時間${m}分${s}秒`
+  return [h, m, s]
 });
 
 export const usedSpell = setUpSpell(2)
 
+type nitroResType = {
+  magicSuccess: string
+  isMoving: boolean
+}
+
 const App = () => {
   const [counter, setCounter] = useState(0)//カウントアップ用
   const stopCounter = useRef(-1)
-  const [nitroRes, setnitroRes] = useState('')
+  const [nitroRes, setnitroRes] = useState<nitroResType>()
   const [pyRes, setPyres] = useState(false)
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
   const pySocketRef = useRef<ReconnectingWebSocket>(null)
-  const handStick = useRef<ReconnectingWebSocket>(null)//杖を持っているか用socket
-  const [handingStick, sethandingStick] = useState(false)//今杖を持っているかState
   const mediaRecorderREf = useRef<MediaRecorder | null>(null)
   const [dispState, setDispState] = useState<string>('title')
   const {
@@ -34,17 +37,18 @@ const App = () => {
   } = useSpeechRecognition();//音声テキスト化API
   const [play, { stop, sound }] = useSound(defaultAlarmSound, {
     playbackRate: 1.0, // 標準の再生速度
-    volume: 0.5,
+    volume: 1,
     interrupt: true,
     loop: true
   })
 
   //初回レンダリング時
   useEffect(() => {
+    console.log('初回レンダリング')
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
-    nitroSocketRef.current = setServer('ws://localhost:3001', setnitroRes)
-    handStick.current = setServer('ws://localhost:3002', sethandingStick)
-    const sendUsedSpell = setServer('ws://localhost:3003')
+    nitroSocketRef.current = setServer('ws://spell', setnitroRes)
+    // handStick.current = setServer('ws://handstick', sethandingStick)
+    const sendUsedSpell = setServer('ws://localhost:setup')
     sendUsedSpell.send(JSON.stringify(usedSpell))
     pySocketRef.current = setServer('ws://localhost:8000/ws', setPyres)
     const startRecording = async () => {
@@ -64,7 +68,7 @@ const App = () => {
 
   useEffect(() => {
     //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-    if ((dispState === 'start') && handingStick && (finalTranscript.includes('スペルワーカー'))) {
+    if ((dispState === 'start') && nitroRes?.isMoving && (finalTranscript.includes('スペルワーカー'))) {
       setDispState('work')
       const interval = setInterval(() => {
         setCounter(prev => prev + 1);
@@ -82,15 +86,14 @@ const App = () => {
   }, [finalTranscript])
 
   useEffect(() => {
-    if (nitroRes === 'void1') {
-      stopCounter.current = counter
-    } else if (nitroRes === 'void2') {
-      setCounter(stopCounter.current)
-    } else if (nitroRes === 'void3') {
+    if (nitroRes?.magicSuccess === 'void1') {
       window.location.reload()
-    } else if (nitroRes === 'void4' && sound?.isPlayng) {
-      stop()
-      setDispState('work')
+    } else if (nitroRes?.magicSuccess === 'void2') {
+      stopCount()
+    } else if (nitroRes?.magicSuccess === 'void3') {
+      startCount()
+    } else if (nitroRes?.magicSuccess === 'void4' && sound?.isPlayng) {
+      stopalerm()
     }
   }, [nitroRes])
 
@@ -101,6 +104,18 @@ const App = () => {
       if (pyRes) play()
     }
   }, [pyRes])
+
+  const stopCount = () => {
+    stopCounter.current = counter
+  }
+  const startCount = () => {
+    setCounter(stopCounter.current)
+    stopCounter.current = -1
+  }
+  const stopalerm = () => {
+    stop()
+    setDispState('work')
+  }
 
   //推奨環境
   if (!browserSupportsSpeechRecognition) {
@@ -113,6 +128,7 @@ const App = () => {
     <>
       {dispState === 'title' &&
         <div>
+          <img src='SpellWorker Wand.svg' />
           <div>SpellWorler</div>
           <div onClick={() => setDispState('start')}>クリックして魔法を使ってスタート</div>
         </div>
@@ -133,10 +149,42 @@ const App = () => {
       }
       {dispState === 'work' &&
         <>
+          <img src='SpellWorker Wand.svg' />
           <div>Spellwoker</div>
-          <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)}</div>
+          <div>
+            <div>
+              <div>HOURS</div>
+              <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</div>
+            </div>
+            <div>:
+              <div>MINITS</div>
+              <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</div>
+            </div>
+            <div>:
+              <div>SECONDS</div>
+              <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</div>
+            </div>
+          </div>
+          <button onClick={() => window.location.reload()}>
+            <img src='/SpellWorker Group 12.png' />
+            <div>終了</div>
+            <div>{JSON.stringify(usedSpell.void1)}</div>
+          </button>
+          {stopCounter.current! < 0 ?
+            <button onClick={() => stopCount()}>
+              <img src='/SpellWorker Group 10.png' />
+              <div>停止</div>
+              <div>{JSON.stringify(usedSpell.void2)}</div>
+            </button>
+            :
+            <button onClick={() => startCount()}>
+              <img src='/SpellWorker Group 13.png' />
+              <div>開始</div>
+              <div>{JSON.stringify(usedSpell.void2)}</div>
+            </button>
+          }
           <div>呪文一覧</div>
-          <div>以下デバック用</div>
+          <div>{JSON.stringify(usedSpell)}</div>
           <div>{finalTranscript}</div>
           <div>{JSON.stringify(usedSpell.void1)}</div>
           <div>{JSON.stringify(usedSpell.void2)}</div>
@@ -147,6 +195,7 @@ const App = () => {
         <>
           <div>睡眠を検知 起きてください</div>
           <div>魔法を使ってアラームを止める</div>
+          <div>デバック</div>
           <div onClick={() => { setDispState('work'); stop() }}>mmm</div>
         </>
       }
