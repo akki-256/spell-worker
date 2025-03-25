@@ -1,6 +1,9 @@
-export type SpellMessage = {
+export interface CorrectSpell {
+  jsontype: Record<string, string>;
+}
+
+export type UserSpell = {
   userSpell: string;
-  correctSpell: string;
 };
 
 export type SensorData = {
