@@ -14,7 +14,7 @@ export default defineEventHandler(async (event) => {
   }
 
   // console.log(sensorData);
-  console.log("isMoving", latestIsMoving, sensorData.accel_x ,sensorData.accel_y, sensorData.accel_z, sensorData.angle_x, sensorData.angle_y);
+  // console.log("isMoving", latestIsMoving, sensorData.accel_x ,sensorData.accel_y, sensorData.accel_z, sensorData.angle_x, sensorData.angle_y);
 
   previousSensorData = sensorData;
 
