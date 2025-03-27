@@ -20,15 +20,27 @@ type nitroResType = {
   isMoving: boolean
 }
 
+const post = async (url: string, blob: Blob) => {
+  const formData = new FormData();
+  formData.append("file", blob);
+
+  await fetch(url, {
+    method: "POST",
+    body: formData,
+  });
+};
+
+
 const App = () => {
   const [counter, setCounter] = useState(0)//カウントアップ用
   const stopCounter = useRef(-1)
   const [nitroRes, setnitroRes] = useState<nitroResType>()
   const [pyRes, setPyres] = useState(false)
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
-  const pySocketRef = useRef<ReconnectingWebSocket>(null)
-  const mediaRecorderREf = useRef<MediaRecorder | null>(null)
   const [dispState, setDispState] = useState<string>('title')
+  const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
+  const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
+  const ctxRef = useRef<CanvasRenderingContext2D | null>(null)
   const {
     finalTranscript,
     browserSupportsSpeechRecognition,
@@ -44,41 +56,68 @@ const App = () => {
 
   //初回レンダリング時
   useEffect(() => {
-    console.log('初回レンダリング')
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
-    nitroSocketRef.current = setServer('ws://localhost:3000/spell', setnitroRes)
-    // handStick.current = setServer('ws://handstick', sethandingStick)
-    const sendUsedSpell = setServer('ws://localhost:3000/:setup')
+    nitroSocketRef.current = setServer('ws://localhost:3000/spell/ws', setnitroRes)
+    const sendUsedSpell = setServer('ws://localhost:3000/:setup/ws')
     sendUsedSpell.send(JSON.stringify(usedSpell))
-    pySocketRef.current = setServer('ws://localhost:8000/ws', setPyres)
-    const startRecording = async () => {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });//カメラの使用許可、入力を取得
-      mediaRecorderREf.current = new MediaRecorder(stream, { mimeType: "video/webm" });//録画を管理するオブジェクトのインスタンスを作成
-      mediaRecorderREf.current.ondataavailable = (event) => {//録音データが利用可能になるたび
-        if (pySocketRef.current?.readyState === WebSocket.OPEN) {
-          pySocketRef.current?.send(event.data)
-        } else {
-          pySocketRef.current?.reconnect()
+
+    let stream: MediaStream;
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((s) => {
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play()
         }
-      };
-      mediaRecorderREf.current.start(1000);//実際にはここで録音開始
+      })
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
     };
-    startRecording()
   }, [])
 
+  const captureFrame = async () => {
+    if (!videoRef.current) return;
+    if (!canvasRef.current) return;
+
+    canvasRef.current.width = videoRef.current.videoWidth
+    canvasRef.current.height = videoRef.current.videoHeight
+    const ctx = ctxRef.current ?? canvasRef.current.getContext("2d");
+    if (!ctx) return;
+    ctxRef.current = ctx;
+    ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+    const blob = await new Promise<Blob | null>((resolve) => {
+      canvasRef.current.toBlob((b) => resolve(b), 'image/jpeg')
+    })
+    if (blob) sendFrame(blob)
+  };
+
+  const sendFrame = async (blob: Blob) => {
+    const formData = new FormData();
+    formData.append('frame', blob);
+
+    const response = await fetch('http://localhost:8000/analyze', {
+      method: 'POST',
+      body: formData,
+    });
+    const result = await response.json();
+    console.log(result);
+  };
+
   useEffect(() => {
-    console.log('finaltrancsript')
     //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
     if ((dispState === 'start') && nitroRes?.isMoving && (finalTranscript.includes('スペルワーカー'))) {
       setDispState('work')
       const interval = setInterval(() => {
         setCounter(prev => prev + 1);
+        captureFrame()
       }, 1000);
       return () => clearInterval(interval);
     }
-    console.log(nitroSocketRef.current?.readyState)
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
-      console.log('nitro送信')
       const sendMessage = finalTranscript.replace(/\s+/g, '')
       nitroSocketRef.current?.send(sendMessage)
       resetTranscript();
@@ -143,7 +182,9 @@ const App = () => {
           <div onClick={() => {
             setDispState('work')
             const interval = setInterval(() => {
+              console.log('カウントアップ')
               setCounter(prev => prev + 1);
+              captureFrame()
             }, 1000);
             return () => clearInterval(interval);
           }}>デバック用</div>
