@@ -14,8 +14,8 @@ import { PiPlayBold } from "react-icons/pi";
 import { TbPlayerPause } from "react-icons/tb";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell/ws'
-const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup/ws'
+const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
+const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
