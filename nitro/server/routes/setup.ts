@@ -8,12 +8,22 @@ export default defineWebSocketHandler({
     peer.send({ user: "server", message: "open" });
   },
   message: async (peer, message) => {
-    correctSpell = await message.json();
+    try {
+      // メッセージが空でないかチェック
+      if (!message) {
+        peer.send({ user: "server", message: "Error: empty message received" });
+        return;
+      }
 
-    peer.send({
-      user: "server",
-      message: correctSpell,
-    });
+      correctSpell = await message.json();
+
+      peer.send({
+        user: "server",
+        message: correctSpell,
+      });
+    } catch (error) {
+      peer.send({ user: "server", message: `Error: ${error.message}` });
+    }
   },
   close(peer) {
     peer.send({ user: "server", message: "close" });

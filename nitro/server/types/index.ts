@@ -6,6 +6,10 @@ export type UserSpell = {
   userSpell: string;
 };
 
+export type ConvertedUserSpell = {
+  message: string;
+};
+
 export type SensorData = {
   accel_x: number;
   accel_y: number;

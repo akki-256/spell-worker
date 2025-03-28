@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import {useEffect, useRef, useState } from 'react'
 import ReconnectingWebSocket from 'reconnecting-websocket'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 import setServer from './component/setServer'
@@ -6,6 +6,13 @@ import setUpSpell from './component/setUpSpell'
 import useSound from 'use-sound'
 import defaultAlarmSound from '../default-alarm-sound.mp3'
 import { captureAndSendPY } from './component/Captureandsend'
+import wandImage from "../public/SpellWorker Wand.svg";
+import "@fontsource/MedievalSharp";
+import "../src/App.css";
+import { RxCross2 } from "react-icons/rx";
+import { PiPlayBold } from "react-icons/pi";
+import { TbPlayerPause } from "react-icons/tb";
+import { motion, AnimatePresence } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell/ws'
 const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup/ws'
@@ -24,6 +31,21 @@ export const usedSpell = setUpSpell(2)//#########ToDo########### 本来は魔法
 type nitroResType = {
   magicSuccess: string
   isMoving: boolean
+}
+
+interface ImageStyle {
+  width: string;
+  height: string;
+  top: string;
+  left: string;
+  transform: string;
+  opacity: number;
+  zIndex: number;
+}
+
+interface DisplayImage {
+  url: string;
+  style: ImageStyle;
 }
 
 const App = () => {
@@ -69,7 +91,6 @@ const App = () => {
   //     })
   //   }
   // };
-
 
   const stopCount = () => {
     stopCounter.current = counter
@@ -142,6 +163,7 @@ const App = () => {
   useEffect(() => {
     if (pyRes === '眠っています') {
       setDispState('sleep')
+      shuffleImages();
       if (pyRes) play()
     }
   }, [pyRes === '眠っています'])
@@ -153,79 +175,215 @@ const App = () => {
     return <span>マイクの使用許可をください</span>
   }
 
+  const images = ["/img1.svg", "/img2.svg", "/img3.svg", "/img4.svg", "/img5.svg", "/img6.svg"];
+  const [displayImages, setDisplayImages] = useState<DisplayImage[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string>('');
+  const [imageError, setImageError] = useState<boolean>(false);
+
+  const generateGridPositions = (count: number): ImageStyle[] => {
+    const styles: ImageStyle[] = [];
+    const size = 40;
+    const padding = 0;
+    
+    const cols = Math.ceil(Math.sqrt(count));
+    const rows = Math.ceil(count / cols);
+    
+    const totalWidthSpace = 100 - (size + padding * 2);
+    const totalHeightSpace = 100 - (size + padding * 2);
+    
+    for (let i = 0; i < count; i++) {
+      const row = Math.floor(i / cols);
+      const col = i % cols;
+      
+      let left = (totalWidthSpace / (cols - 1)) * col;
+      let top = (totalHeightSpace / (rows - 1)) * row;
+      
+      const jitter = 5;
+      left += Math.random() * jitter - jitter/2;
+      top += Math.random() * jitter - jitter/2;
+      
+      left = Math.max(padding, Math.min(100 - size - padding, left));
+      top = Math.max(padding, Math.min(100 - size - padding, top));
+      
+      const rotation = Math.random() * 10 - 5;
+      
+      styles.push({
+        width: `${size}%`,
+        height: `${size}%`,
+        top: `${top}%`,
+        left: `${left}%`,
+        transform: `rotate(${rotation}deg)`,
+        opacity: 1,
+        zIndex: 1
+      });
+    }
+    
+    return styles;
+  };
+
+  const shuffleImages = () => {
+    setImageError(false);
+    setDisplayImages(prev => 
+      prev.map(img => ({
+        ...img,
+        style: { ...img.style, opacity: 0 }
+      }))
+    );
+
+    setTimeout(() => {
+      const randomImageIndex = Math.floor(Math.random() * images.length);
+      const newSelectedImage = images[randomImageIndex];
+      setSelectedImage(newSelectedImage);
+
+      const numberOfImages = Math.floor(Math.random() * 2) + 9;
+      const gridPositions = generateGridPositions(numberOfImages);
+      
+      const newImages: DisplayImage[] = [];
+      
+      for (let i = 0; i < numberOfImages; i++) {
+        newImages.push({
+          url: newSelectedImage,
+          style: { ...gridPositions[i], opacity: 0 }
+        });
+      }
+
+      setDisplayImages(newImages);
+
+      requestAnimationFrame(() => {
+        setDisplayImages(newImages.map(img => ({
+          ...img,
+          style: { ...img.style, opacity: 1 }
+        })));
+      });
+    }, 300);
+  };
+
+  const handleImageError = () => {
+    setImageError(true);
+    console.error('Failed to load image:', selectedImage);
+  };
+
+
+
   return (
     <>
       {dispState === 'title' &&
-        <div>
-          <img src='SpellWorker Wand.svg' />
-          <div>SpellWorler</div>
-          <div onClick={() => setDispState('start')}>クリックして魔法を使ってスタート</div>
+        <div className='container'>
+          <img src={wandImage} alt="Magic Wand" className="wand" />
+          <h1 className="title">SpellWorker</h1>
+          <p className="subtitle">Stay Awake with Magic</p>
+          <div className="spell-button" onClick={() => setDispState('start')}>Get Ready Casting pell</div>
         </div>
       }
       {dispState === 'start' &&
-        <div>
-          <div>SpellWorker</div>
-          <div>zyumon(仮:スペルワーカー)</div>
-          <div>魔法を使おう</div>
-          <div onClick={() => {
+        <div className='container'>
+          <img src={wandImage} alt="Magic Wand" className="wand" />
+          <h1 className="title">SpellWorker</h1>
+          <div className="spell-button" onClick={() => {
             setDispState('work')
             const interval = setInterval(() => {
               setCounter(prev => prev + 1);
               captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
             }, 1000);
             return () => clearInterval(interval);
-          }}>デバック用</div>
-        </div>
+          }}>Cast Opening Spell</div>
+      </div>
       }
       {dispState === 'work' &&
         <>
-          <img src='SpellWorker Wand.svg' />
-          <div>Spellwoker</div>
-          <div>
-            <div>
-              <div>HOURS</div>
-              <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</div>
-            </div>
-            <div>:
-              <div>MINITS</div>
-              <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</div>
-            </div>
-            <div>:
-              <div>SECONDS</div>
-              <div>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</div>
+        <div>
+          <div className="header">
+            <img src={wandImage} alt="Magic Wand" className="headerlogo" />
+            <h1 className="hedaertitle" onClick={() => setPyres(true)}>SpellWorker</h1>
+          </div>
+          
+          <div className="timer-container">
+            <div className="timer-display">
+              <div className="time-section">
+                <span className="time-label">Hours</span>
+                <div className="time-box">
+                  <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</span>
+                </div>
+              </div>
+
+              <span className="separator">:</span>
+
+              <div className="time-section">
+                <span className="time-label">Minutes</span>
+                <div className="time-box">
+                  <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</span>
+                </div>
+              </div>
+              <span className="separator">:</span>
+
+              <div className="time-section">
+                <span className="time-label">Minutes</span>
+                <div className="time-box">
+                  <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
+                </div>
+              </div>
             </div>
           </div>
-          <button onClick={() => window.location.reload()}>
-            <img src='/SpellWorker Group 12.png' />
-            <div>終了</div>
-            <div>{JSON.stringify(usedSpell.void1)}</div>
-          </button>
-          {stopCounter.current! < 0 ?
-            <button onClick={() => stopCount()}>
-              <img src='/SpellWorker Group 10.png' />
-              <div>停止</div>
-              <div>{JSON.stringify(usedSpell.void2)}</div>
+
+          <div className="controls">
+            <button onClick={() => window.location.reload()} className="control-button">
+              <div className="button-icon reset-icon"><RxCross2 /></div>
+              <span className="button-text">終了</span>
+              <span className="button-subtext">{JSON.stringify(usedSpell.void1)}</span>
             </button>
+
+            {stopCounter.current! < 0 ?
+              <button className="control-button" onClick={() => stopCount()}>
+                <div className="button-icon stop-icon"> <TbPlayerPause /> </div>
+                <span className="button-text">停止</span>
+                <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+              </button>
             :
-            <button onClick={() => startCount()}>
-              <img src='/SpellWorker Group 13.png' />
-              <div>開始</div>
-              <div>{JSON.stringify(usedSpell.void2)}</div>
-            </button>
-          }
+
           <div>呪文一覧</div>
           <div>{JSON.stringify(usedSpell)}</div>
           <div>{finalTranscript}</div>
           <div>{JSON.stringify(usedSpell.void1)}</div>
           <div>{JSON.stringify(usedSpell.void2)}</div>
+        
+              <button className="control-button" onClick={() => startCount()}>
+                <div className="button-icon start-icon"> <PiPlayBold /></div>
+                <span className="button-text">開始</span>
+                <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+              </button>
+            }
+          </div>
+        </div>
         </>
       }
       {dispState === 'sleep' &&
         <>
-          <div>睡眠を検知 起きてください</div>
-          <div>魔法を使ってアラームを止める</div>
-          <div>デバック</div>
-          <div onClick={() => { setDispState('work'); stop() }}>mmm</div>
+        <div>
+          <div className="min-h-screen bg-black overflow-hidden relative">
+            {imageError ? (
+              <div className="absolute inset-0 flex items-center justify-center text-white">
+                <p>Failed to load images. Please check the image paths.</p>
+              </div>
+            ) : (
+              displayImages.map((image, index) => (
+                <img
+                  key={`${image.url}-${index}`}
+                  src={image.url}
+                  alt={`SVG ${index + 1}`}
+                  onError={handleImageError}
+                  className="alerm-img"
+                  style={image.style}
+                />
+              ))
+            )}
+          </div>
+          <div className='alermspell-container'>
+            <div onClick={() => { setDispState('work'); stop() ,setPyres(false)}} className="alerm-text">
+              呪文
+            </div>
+            <div className="alerm-subtext">魔法を使ってアラームを停止せよ</div>
+          </div>
+        </div>
         </>
       }
     </>
