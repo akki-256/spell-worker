@@ -1,7 +1,6 @@
 import { spellChecker } from "~/utils/spellChecker";
 import { getIsMoving } from "./stick.post";
 import { ConvertedUserSpell, CorrectSpell } from "~/types";
-import { getCorrectSpell } from "./setup";
 import { sendPost } from "~/utils/sendPost";
 
 // WebSocket: 呪文と音声テキストの取得と魔法判定の返却 (ws: /spell)
@@ -17,24 +16,24 @@ export default defineWebSocketHandler({
         return;
       }
       // 音声テキストの取得
-      const userSpell: string = await message.json();
+      const userSpell: string = await message.data.toString();
 
       // 音声テキストのカタカナ変換
       const convertedUserSpell: ConvertedUserSpell = await sendPost(
         "/process",
         userSpell
       );
-
-      // 正解呪文の取得
-      const correctSpell: CorrectSpell = getCorrectSpell();
+      //   console.log("userSpell", convertedUserSpell.message);
 
       // 杖の振り判定の取得
       const isMoving: boolean = getIsMoving();
+      //   console.log("isMoving", isMoving);
 
       // 魔法の判定
       const magicSuccess = isMoving
-        ? spellChecker(convertedUserSpell.message, correctSpell.jsontype)
+        ? spellChecker(convertedUserSpell.message)
         : null;
+      //   console.log("magicSuccess", magicSuccess);
 
       peer.send({
         user: "server",

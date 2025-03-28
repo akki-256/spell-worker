@@ -9,6 +9,7 @@ export default defineEventHandler(async (event) => {
 
   if (previousSensorData) {
     latestIsMoving = stickRunChecker(sensorData, previousSensorData);
+
     // const x = sensorData.accel_x - previousSensorData.accel_x;
     // const y = sensorData.accel_y - previousSensorData.accel_y;
     // const z = sensorData.accel_z - previousSensorData.accel_z;
@@ -24,6 +25,7 @@ export default defineEventHandler(async (event) => {
     //     Math.abs(y).toPrecision(3),
     //     Math.abs(z).toPrecision(3)
     // );
+
   } else {
     latestIsMoving = false;
   }

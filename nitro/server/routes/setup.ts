@@ -16,6 +16,7 @@ export default defineWebSocketHandler({
       }
 
       correctSpell = await message.json();
+      //   console.log("correctSpell", correctSpell);
 
       peer.send({
         user: "server",
