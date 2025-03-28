@@ -7,8 +7,8 @@ import useSound from 'use-sound'
 import defaultAlarmSound from '../default-alarm-sound.mp3'
 import { captureAndSendPY } from './component/captureandsend'
 import wandImage from "../public/SpellWorker Wand.svg";
-import "@fontsource/MedievalSharp";
 import "../src/App.css";
+import "@fontsource/MedievalSharp";
 import { RxCross2 } from "react-icons/rx";
 import { PiPlayBold } from "react-icons/pi";
 import { TbPlayerPause } from "react-icons/tb";
@@ -30,8 +30,13 @@ const settimer = ((count: number) => {
 export const usedSpell = setUpSpell(2)//#########ToDo########### 本来は魔法の種類だけある
 
 type nitroResType = {
-  magicSuccess: string
-  isMoving: boolean
+  "user": string,
+  "message": string | nitrosMessageType
+}
+
+type nitrosMessageType = {
+  "magicSuccess": string | null,
+  "isMoving": boolean
 }
 
 interface ImageStyle {
@@ -52,8 +57,8 @@ interface DisplayImage {
 const App = () => {
   const [counter, setCounter] = useState(0)//カウントアップ用
   const stopCounter = useRef(-1)
-  const [nitroRes, setnitroRes] = useState<nitroResType>()
-  const [pyRes, setPyres] = useState('')
+  const [nitroRes, setnitroRes] = useState<string>('{"user":"default","message":"default"}')
+  const [pyRes, setPyres] = useState(false)
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
   const handleRef = useRef<ReconnectingWebSocket>(null)
   const [handling, setHandling] = useState(false)
@@ -135,7 +140,7 @@ const App = () => {
 
   useEffect(() => {
     //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-    if ((dispState === 'start') && handling && (finalTranscript.includes('スペルワーカー'))) {
+    if ((dispState === 'start') && handling && (finalTranscript.includes('か'))) {
       setDispState('work')
       const interval = setInterval(() => {
         setCounter(prev => prev + 1);
@@ -156,24 +161,38 @@ const App = () => {
   }, [finalTranscript])
 
   useEffect(() => {
-    if (nitroRes?.magicSuccess === 'void1') {
-      window.location.reload()
-    } else if (nitroRes?.magicSuccess === 'void2') {
-      stopCount()
-    } else if (nitroRes?.magicSuccess === 'void3') {
-      startCount()
-    } else if (nitroRes?.magicSuccess === 'void4' && sound?.isPlayng) {
-      stopalerm()
+    if (typeof nitroRes !== 'undefined') {
+      const JsonNitro: nitroResType = JSON.parse(nitroRes)
+      switch ((JsonNitro.message as nitrosMessageType)?.magicSuccess) {
+        case 'void1': window.location.reload()
+          break
+        case 'void2': stopCount()
+          break
+        case 'void3': startCount()
+          break
+        case 'void4':
+          if (sound.isPlayng) stopalerm()
+          break
+      }
+      // if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void1') {
+      //   window.location.reload()
+      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void2') {
+      //   stopCount()
+      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void3') {
+      //   startCount()
+      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void4' && sound?.isPlayng) {
+      //   stopalerm()
+      // }
     }
   }, [nitroRes])
 
   useEffect(() => {
-    if (pyRes === '眠っています') {
+    if (pyRes) {
       setDispState('sleep')
       shuffleImages();
       if (pyRes) play()
     }
-  }, [pyRes === '眠っています'])
+  }, [pyRes])
 
   //推奨環境
   if (!browserSupportsSpeechRecognition) {
@@ -299,7 +318,7 @@ const App = () => {
           <div>
             <div className="header">
               <img src={wandImage} alt="Magic Wand" className="headerlogo" />
-              <h1 className="hedaertitle" onClick={() => setPyres('眠っています')}>SpellWorker</h1>
+              <h1 className="hedaertitle" onClick={() => setPyres(true)}>SpellWorker</h1>
             </div>
 
             <div className="timer-container">
@@ -322,7 +341,7 @@ const App = () => {
                 <span className="separator">:</span>
 
                 <div className="time-section">
-                  <span className="time-label">Minutes</span>
+                  <span className="time-label">Seconds</span>
                   <div className="time-box">
                     <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
                   </div>
@@ -382,7 +401,7 @@ const App = () => {
               )}
             </div>
             <div className='alermspell-container'>
-              <div onClick={() => { setDispState('work'); stop(), setPyres('起きています') }} className="alerm-text">
+              <div onClick={() => { setDispState('work'); stop(), setPyres(false) }} className="alerm-text">
                 呪文
               </div>
               <div className="alerm-subtext">Casting Spell To Stop The Alarm</div>
