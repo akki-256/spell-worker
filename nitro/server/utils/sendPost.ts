@@ -21,7 +21,6 @@ export const sendPost = async (
       return response.json();
     })
     .then((data) => {
-      console.log("Success:", data);
       return { message: data.message } as ConvertedUserSpell;
     })
     .catch((error) => {

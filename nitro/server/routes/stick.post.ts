@@ -8,7 +8,7 @@ export default defineEventHandler(async (event) => {
   const sensorData: SensorData = await readBody(event);
 
   if (previousSensorData) {
-    latestIsMoving = stickRunChecker(sensorData,previousSensorData);
+    latestIsMoving = stickRunChecker(sensorData, previousSensorData);
   } else {
     latestIsMoving = false;
   }

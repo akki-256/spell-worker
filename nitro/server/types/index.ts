@@ -1,5 +1,5 @@
 export interface CorrectSpell {
-  jsontype: Record<string, string>;
+  [key: string]: string;
 }
 
 export type UserSpell = {
