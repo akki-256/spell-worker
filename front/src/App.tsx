@@ -1,11 +1,11 @@
-import {useEffect, useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import ReconnectingWebSocket from 'reconnecting-websocket'
 import SpeechRecognition, { useSpeechRecognition } from 'react-speech-recognition'
 import setServer from './component/setServer'
 import setUpSpell from './component/setUpSpell'
 import useSound from 'use-sound'
 import defaultAlarmSound from '../default-alarm-sound.mp3'
-import { captureAndSendPY } from './component/Captureandsend'
+import { captureAndSendPY } from './component/captureandsend'
 import wandImage from "../public/SpellWorker Wand.svg";
 import "@fontsource/MedievalSharp";
 import "../src/App.css";
@@ -14,8 +14,8 @@ import { PiPlayBold } from "react-icons/pi";
 import { TbPlayerPause } from "react-icons/tb";
 import { motion, AnimatePresence } from "framer-motion";
 
-const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell/ws'
-const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup/ws'
+const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
+const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
@@ -66,7 +66,7 @@ const App = () => {
   } = useSpeechRecognition();//音声テキスト化API
   const [play, { stop, sound }] = useSound(defaultAlarmSound, {
     playbackRate: 1.0, // 標準の再生速度
-    volume: 1,
+    volume: 10,
     interrupt: true,
     loop: true
   })
@@ -184,29 +184,29 @@ const App = () => {
     const styles: ImageStyle[] = [];
     const size = 40;
     const padding = 0;
-    
+
     const cols = Math.ceil(Math.sqrt(count));
     const rows = Math.ceil(count / cols);
-    
+
     const totalWidthSpace = 100 - (size + padding * 2);
     const totalHeightSpace = 100 - (size + padding * 2);
-    
+
     for (let i = 0; i < count; i++) {
       const row = Math.floor(i / cols);
       const col = i % cols;
-      
+
       let left = (totalWidthSpace / (cols - 1)) * col;
       let top = (totalHeightSpace / (rows - 1)) * row;
-      
+
       const jitter = 5;
-      left += Math.random() * jitter - jitter/2;
-      top += Math.random() * jitter - jitter/2;
-      
+      left += Math.random() * jitter - jitter / 2;
+      top += Math.random() * jitter - jitter / 2;
+
       left = Math.max(padding, Math.min(100 - size - padding, left));
       top = Math.max(padding, Math.min(100 - size - padding, top));
-      
+
       const rotation = Math.random() * 10 - 5;
-      
+
       styles.push({
         width: `${size}%`,
         height: `${size}%`,
@@ -217,13 +217,13 @@ const App = () => {
         zIndex: 1
       });
     }
-    
+
     return styles;
   };
 
   const shuffleImages = () => {
     setImageError(false);
-    setDisplayImages(prev => 
+    setDisplayImages(prev =>
       prev.map(img => ({
         ...img,
         style: { ...img.style, opacity: 0 }
@@ -237,9 +237,9 @@ const App = () => {
 
       const numberOfImages = Math.floor(Math.random() * 2) + 9;
       const gridPositions = generateGridPositions(numberOfImages);
-      
+
       const newImages: DisplayImage[] = [];
-      
+
       for (let i = 0; i < numberOfImages; i++) {
         newImages.push({
           url: newSelectedImage,
@@ -263,8 +263,6 @@ const App = () => {
     console.error('Failed to load image:', selectedImage);
   };
 
-
-
   return (
     <>
       {dispState === 'title' &&
@@ -287,103 +285,102 @@ const App = () => {
             }, 1000);
             return () => clearInterval(interval);
           }}>Cast Opening Spell</div>
-      </div>
+        </div>
       }
       {dispState === 'work' &&
         <>
-        <div>
-          <div className="header">
-            <img src={wandImage} alt="Magic Wand" className="headerlogo" />
-            <h1 className="hedaertitle" onClick={() => setPyres(true)}>SpellWorker</h1>
-          </div>
-          
-          <div className="timer-container">
-            <div className="timer-display">
-              <div className="time-section">
-                <span className="time-label">Hours</span>
-                <div className="time-box">
-                  <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</span>
+          <div>
+            <div className="header">
+              <img src={wandImage} alt="Magic Wand" className="headerlogo" />
+              <h1 className="hedaertitle" onClick={() => setPyres('眠っています')}>SpellWorker</h1>
+            </div>
+
+            <div className="timer-container">
+              <div className="timer-display">
+                <div className="time-section">
+                  <span className="time-label">Hours</span>
+                  <div className="time-box">
+                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</span>
+                  </div>
                 </div>
-              </div>
 
-              <span className="separator">:</span>
+                <span className="separator">:</span>
 
-              <div className="time-section">
-                <span className="time-label">Minutes</span>
-                <div className="time-box">
-                  <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</span>
+                <div className="time-section">
+                  <span className="time-label">Minutes</span>
+                  <div className="time-box">
+                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</span>
+                  </div>
                 </div>
-              </div>
-              <span className="separator">:</span>
+                <span className="separator">:</span>
 
-              <div className="time-section">
-                <span className="time-label">Minutes</span>
-                <div className="time-box">
-                  <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
+                <div className="time-section">
+                  <span className="time-label">Minutes</span>
+                  <div className="time-box">
+                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
 
-          <div className="controls">
-            <button onClick={() => window.location.reload()} className="control-button">
-              <div className="button-icon reset-icon"><RxCross2 /></div>
-              <span className="button-text">終了</span>
-              <span className="button-subtext">{JSON.stringify(usedSpell.void1)}</span>
-            </button>
-
-            {stopCounter.current! < 0 ?
-              <button className="control-button" onClick={() => stopCount()}>
-                <div className="button-icon stop-icon"> <TbPlayerPause /> </div>
-                <span className="button-text">停止</span>
-                <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+            <div className="controls">
+              <button onClick={() => window.location.reload()} className="control-button">
+                <div className="button-icon reset-icon"><RxCross2 /></div>
+                <span className="button-text">終了</span>
+                <span className="button-subtext">{JSON.stringify(usedSpell.void1)}</span>
               </button>
-            :
 
-          <div>呪文一覧</div>
-          <div>{JSON.stringify(usedSpell)}</div>
-          <div>{finalTranscript}</div>
-          <div>{JSON.stringify(usedSpell.void1)}</div>
-          <div>{JSON.stringify(usedSpell.void2)}</div>
-        
-              <button className="control-button" onClick={() => startCount()}>
-                <div className="button-icon start-icon"> <PiPlayBold /></div>
-                <span className="button-text">開始</span>
-                <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
-              </button>
-            }
+              {stopCounter.current! < 0 ?
+                <button className="control-button" onClick={() => stopCount()}>
+                  <div className="button-icon stop-icon"> <TbPlayerPause /> </div>
+                  <span className="button-text">停止</span>
+                  <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+                </button>
+                :
+                <button className="control-button" onClick={() => startCount()}>
+                  <div className="button-icon start-icon"> <PiPlayBold /></div>
+                  <span className="button-text">開始</span>
+                  <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+                </button>
+              }
+            </div>
+            <div>呪文一覧</div>
+            <div>{JSON.stringify(usedSpell)}</div>
+            <div>{finalTranscript}</div>
+            <div>{JSON.stringify(usedSpell.void1)}</div>
+            <div>{JSON.stringify(usedSpell.void2)}</div>
           </div>
-        </div>
         </>
       }
-      {dispState === 'sleep' &&
+      {
+        dispState === 'sleep' &&
         <>
-        <div>
-          <div className="min-h-screen bg-black overflow-hidden relative">
-            {imageError ? (
-              <div className="absolute inset-0 flex items-center justify-center text-white">
-                <p>Failed to load images. Please check the image paths.</p>
-              </div>
-            ) : (
-              displayImages.map((image, index) => (
-                <img
-                  key={`${image.url}-${index}`}
-                  src={image.url}
-                  alt={`SVG ${index + 1}`}
-                  onError={handleImageError}
-                  className="alerm-img"
-                  style={image.style}
-                />
-              ))
-            )}
-          </div>
-          <div className='alermspell-container'>
-            <div onClick={() => { setDispState('work'); stop() ,setPyres(false)}} className="alerm-text">
-              呪文
+          <div>
+            <div className="min-h-screen bg-black overflow-hidden relative">
+              {imageError ? (
+                <div className="absolute inset-0 flex items-center justify-center text-white">
+                  <p>Failed to load images. Please check the image paths.</p>
+                </div>
+              ) : (
+                displayImages.map((image, index) => (
+                  <img
+                    key={`${image.url}-${index}`}
+                    src={image.url}
+                    alt={`SVG ${index + 1}`}
+                    onError={handleImageError}
+                    className="alerm-img"
+                    style={image.style}
+                  />
+                ))
+              )}
             </div>
-            <div className="alerm-subtext">魔法を使ってアラームを停止せよ</div>
+            <div className='alermspell-container'>
+              <div onClick={() => { setDispState('work'); stop(), setPyres('起きています') }} className="alerm-text">
+                呪文
+              </div>
+              <div className="alerm-subtext">魔法を使ってアラームを停止せよ</div>
+            </div>
           </div>
-        </div>
         </>
       }
     </>
