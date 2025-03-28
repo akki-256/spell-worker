@@ -5,6 +5,7 @@ import setServer from './component/setServer'
 import setUpSpell from './component/setUpSpell'
 import useSound from 'use-sound'
 import defaultAlarmSound from '../default-alarm-sound.mp3'
+import { captureAndSendPY } from './component/Captureandsend'
 import wandImage from "../public/SpellWorker Wand.svg";
 import "@fontsource/MedievalSharp";
 import "../src/App.css";
@@ -13,6 +14,11 @@ import { PiPlayBold } from "react-icons/pi";
 import { TbPlayerPause } from "react-icons/tb";
 import { motion, AnimatePresence } from "framer-motion";
 
+const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell/ws'
+const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup/ws'
+const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
+const N_OF_USED_SPELL = 4
+
 const settimer = ((count: number) => {
   let h = Math.floor(count / 3600).toString()
   let m = Math.floor((count / 60) % 60).toString().padStart(2, '0')
@@ -20,7 +26,7 @@ const settimer = ((count: number) => {
   return [h, m, s]
 });
 
-export const usedSpell = setUpSpell(2)
+export const usedSpell = setUpSpell(2)//#########ToDo########### 本来は魔法の種類だけある
 
 type nitroResType = {
   magicSuccess: string
@@ -42,21 +48,11 @@ interface DisplayImage {
   style: ImageStyle;
 }
 
-const post = async (url: string, blob: Blob) => {
-  const formData = new FormData();
-  formData.append("file", blob);
-
-  await fetch(url, {
-    method: "POST",
-    body: formData,
-  });
-};
-
 const App = () => {
   const [counter, setCounter] = useState(0)//カウントアップ用
   const stopCounter = useRef(-1)
   const [nitroRes, setnitroRes] = useState<nitroResType>()
-  const [pyRes, setPyres] = useState(false)
+  const [pyRes, setPyres] = useState('')
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
@@ -75,11 +71,44 @@ const App = () => {
     loop: true
   })
 
+  // const captureFrame = async () => {
+  //   if (!videoRef.current) return;
+  //   if (!canvasRef.current) return;
+
+  //   canvasRef.current.width = videoRef.current.videoWidth
+  //   canvasRef.current.height = videoRef.current.videoHeight
+  //   const ctx = ctxRef.current ?? canvasRef.current.getContext("2d");
+  //   if (!ctx) return;
+  //   ctxRef.current = ctx;
+  //   ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
+
+  //   const blob = await new Promise<Blob | null>((resolve) => {
+  //     canvasRef.current.toBlob((b) => resolve(b), 'image/jpeg')
+  //   })
+  //   if (blob) {
+  //     sendPy(PYTHON_SLEEP_URL, blob).then(respons => {
+  //       if (typeof (respons) == 'string') setPyres(respons)
+  //     })
+  //   }
+  // };
+
+  const stopCount = () => {
+    stopCounter.current = counter
+  }
+  const startCount = () => {
+    setCounter(stopCounter.current)
+    stopCounter.current = -1
+  }
+  const stopalerm = () => {
+    stop()
+    setDispState('work')
+  }
+
   //初回レンダリング時
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
-    nitroSocketRef.current = setServer('ws://localhost:3000/spell/ws', setnitroRes)
-    const sendUsedSpell = setServer('ws://localhost:3000/:setup/ws')
+    nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
+    const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
     sendUsedSpell.send(JSON.stringify(usedSpell))
 
     let stream: MediaStream;
@@ -96,37 +125,9 @@ const App = () => {
       if (stream) {
         stream.getTracks().forEach((track) => track.stop());
       }
+      SpeechRecognition.stopListening()
     };
   }, [])
-
-  const captureFrame = async () => {
-    if (!videoRef.current) return;
-    if (!canvasRef.current) return;
-
-    canvasRef.current.width = videoRef.current.videoWidth
-    canvasRef.current.height = videoRef.current.videoHeight
-    const ctx = ctxRef.current ?? canvasRef.current.getContext("2d");
-    if (!ctx) return;
-    ctxRef.current = ctx;
-    ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-
-    const blob = await new Promise<Blob | null>((resolve) => {
-      canvasRef.current.toBlob((b) => resolve(b), 'image/jpeg')
-    })
-    if (blob) sendFrame(blob)
-  };
-
-  const sendFrame = async (blob: Blob) => {
-    const formData = new FormData();
-    formData.append('frame', blob);
-
-    const response = await fetch('http://localhost:8000/analyze', {
-      method: 'POST',
-      body: formData,
-    });
-    const result = await response.json();
-    console.log(result);
-  };
 
   useEffect(() => {
     //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
@@ -134,7 +135,7 @@ const App = () => {
       setDispState('work')
       const interval = setInterval(() => {
         setCounter(prev => prev + 1);
-        captureFrame()
+        captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
       }, 1000);
       return () => clearInterval(interval);
     }
@@ -160,25 +161,12 @@ const App = () => {
   }, [nitroRes])
 
   useEffect(() => {
-    if (pyRes) {
+    if (pyRes === '眠っています') {
       setDispState('sleep')
       shuffleImages();
-      console.log('aaa')
       if (pyRes) play()
     }
-  }, [pyRes])
-
-  const stopCount = () => {
-    stopCounter.current = counter
-  }
-  const startCount = () => {
-    setCounter(stopCounter.current)
-    stopCounter.current = -1
-  }
-  const stopalerm = () => {
-    stop()
-    setDispState('work')
-  }
+  }, [pyRes === '眠っています'])
 
   //推奨環境
   if (!browserSupportsSpeechRecognition) {
@@ -294,9 +282,8 @@ const App = () => {
           <div className="spell-button" onClick={() => {
             setDispState('work')
             const interval = setInterval(() => {
-              console.log('カウントアップ')
               setCounter(prev => prev + 1);
-              captureFrame()
+              captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
             }, 1000);
             return () => clearInterval(interval);
           }}>Cast Opening Spell</div>
@@ -352,6 +339,13 @@ const App = () => {
                 <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
               </button>
             :
+
+          <div>呪文一覧</div>
+          <div>{JSON.stringify(usedSpell)}</div>
+          <div>{finalTranscript}</div>
+          <div>{JSON.stringify(usedSpell.void1)}</div>
+          <div>{JSON.stringify(usedSpell.void2)}</div>
+        
               <button className="control-button" onClick={() => startCount()}>
                 <div className="button-icon start-icon"> <PiPlayBold /></div>
                 <span className="button-text">開始</span>

@@ -1,6 +1,6 @@
 import ReconnectingWebSocket from 'reconnecting-websocket'
 
-const setServer = (url: string, setData?: any) => {
+const setServer = (url: string, setData?: React.SetStateAction<any>) => {
     const setWebsocket = new ReconnectingWebSocket(url)
     if (setData) {
         setWebsocket.onmessage = (event) => {
