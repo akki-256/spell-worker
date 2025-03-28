@@ -344,11 +344,11 @@ const App = () => {
                 </button>
               }
             </div>
-            <div>呪文一覧</div>
+            {/* <div>呪文一覧</div>
             <div>{JSON.stringify(usedSpell)}</div>
             <div>{finalTranscript}</div>
             <div>{JSON.stringify(usedSpell.void1)}</div>
-            <div>{JSON.stringify(usedSpell.void2)}</div>
+            <div>{JSON.stringify(usedSpell.void2)}</div> */}
           </div>
         </>
       }
@@ -356,9 +356,9 @@ const App = () => {
         dispState === 'sleep' &&
         <>
           <div>
-            <div className="min-h-screen bg-black overflow-hidden relative">
+            <div className="alermback">
               {imageError ? (
-                <div className="absolute inset-0 flex items-center justify-center text-white">
+                <div>
                   <p>Failed to load images. Please check the image paths.</p>
                 </div>
               ) : (
@@ -378,7 +378,7 @@ const App = () => {
               <div onClick={() => { setDispState('work'); stop(), setPyres('起きています') }} className="alerm-text">
                 呪文
               </div>
-              <div className="alerm-subtext">魔法を使ってアラームを停止せよ</div>
+              <div className="alerm-subtext">Casting Spell To Stop The Alarm</div>
             </div>
           </div>
         </>
