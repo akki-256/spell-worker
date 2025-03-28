@@ -16,6 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
 const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup'
+const NITRO_HANDLING_URL = 'ws://localhost:3000/spell'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
@@ -54,6 +55,8 @@ const App = () => {
   const [nitroRes, setnitroRes] = useState<nitroResType>()
   const [pyRes, setPyres] = useState('')
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
+  const handleRef = useRef<ReconnectingWebSocket>(null)
+  const [handling, setHandling] = useState(false)
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
   const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
@@ -108,6 +111,7 @@ const App = () => {
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
     nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
+    handleRef.current = setServer(NITRO_HANDLING_URL, setHandling)
     const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
     sendUsedSpell.send(JSON.stringify(usedSpell))
 
@@ -131,7 +135,7 @@ const App = () => {
 
   useEffect(() => {
     //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-    if ((dispState === 'start') && nitroRes?.isMoving && (finalTranscript.includes('スペルワーカー'))) {
+    if ((dispState === 'start') && handling && (finalTranscript.includes('スペルワーカー'))) {
       setDispState('work')
       const interval = setInterval(() => {
         setCounter(prev => prev + 1);
@@ -139,6 +143,9 @@ const App = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
+  }, [dispState === 'start' && handling])
+
+  useEffect(() => {
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
       const sendMessage = finalTranscript.replace(/\s+/g, '')
       nitroSocketRef.current?.send(sendMessage)
