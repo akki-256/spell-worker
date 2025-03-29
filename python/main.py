@@ -23,16 +23,11 @@ app.add_middleware(
 
 eye_cascade = cv2.CascadeClassifier(cv2.data.haarcascades + "haarcascade_eye.xml")
 
-DISCORD_WEBHOOK_URL = "https://discord.com/api/webhooks/1351956561467015220/KKdALHUi-gDxFqXpsHkYzIyTvj-iLer45sjc-U5H8fBXvaHln5gKDVJUW_MJapj0yn-8"
 
 closed_eye_time = 0
 last_eye_open_time = time.time()
 sleep_threshold = 20  # 3秒以上目を閉じたら居眠り判定
 
-def send_discord_alert():
-    """ Discordに通知を送る関数 """
-    message = {"content": "歩夢が寝ました、ですが、私は深淵を見ています"}
-    requests.post(DISCORD_WEBHOOK_URL, json=message)
 
 @app.post("/analyze")
 async def analyze_video(frame: UploadFile = File(...)):
