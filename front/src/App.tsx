@@ -39,6 +39,14 @@ type nitrosMessageType = {
   "isMoving": boolean
 }
 
+type handleType = {
+  "user": string,
+  "message": string | handleMessageType
+}
+
+type handleMessageType = {
+  "isMoving": boolean
+}
 interface ImageStyle {
   width: string;
   height: string;
@@ -61,7 +69,7 @@ const App = () => {
   const [pyRes, setPyres] = useState(false)
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
   const handleRef = useRef<ReconnectingWebSocket>(null)
-  const [handling, setHandling] = useState(false)
+  const [handling, setHandling] = useState<string>('{"user":"default","message":"default"}')
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
   const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
@@ -139,16 +147,19 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-    if ((dispState === 'start') && handling && (finalTranscript.includes('か'))) {
-      setDispState('work')
-      const interval = setInterval(() => {
-        setCounter(prev => prev + 1);
-        captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-      }, 1000);
-      return () => clearInterval(interval);
+    if (typeof handling !== 'undefined') {
+      const Jsonhandling: handleType = JSON.parse(handling)
+      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
+      if ((dispState === 'start') && (Jsonhandling.message as handleMessageType)?.isMoving && (finalTranscript.includes('か'))) {
+        setDispState('work')
+        const interval = setInterval(() => {
+          setCounter(prev => prev + 1);
+          captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+        }, 1000);
+        return () => clearInterval(interval);
+      }
     }
-  }, [dispState === 'start' && handling])
+  }, [(dispState === 'start'), handling]);
 
   useEffect(() => {
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
