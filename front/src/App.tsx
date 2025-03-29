@@ -21,7 +21,7 @@ const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
 const settimer = ((count: number) => {
-  let h = Math.floor(count / 3600).toString()
+  let h = Math.floor(count / 3600).toString().padStart(2, '0')
   let m = Math.floor((count / 60) % 60).toString().padStart(2, '0')
   let s = Math.floor(count % 60).toString().padStart(2, '0')
   return [h, m, s]
@@ -192,18 +192,13 @@ const App = () => {
     }
   }, [pyRes])
 
-  //推奨環境
-  if (!browserSupportsSpeechRecognition) {
-    return <span>お使いのブラウザでは音声入力が使用できません:推奨 Google Chrome</span>;
-  } else if (!isMicrophoneAvailable) {
-    return <span>マイクの使用許可をください</span>
-  }
-
+  //画像の設定 
   const images = ["/img1.svg", "/img2.svg", "/img3.svg", "/img4.svg", "/img5.svg", "/img6.svg"];
   const [displayImages, setDisplayImages] = useState<DisplayImage[]>([]);
   const [selectedImage, setSelectedImage] = useState<string>('');
   const [imageError, setImageError] = useState<boolean>(false);
 
+  //画像の配置
   const generateGridPositions = (count: number): ImageStyle[] => {
     const styles: ImageStyle[] = [];
     const size = 40;
@@ -244,7 +239,7 @@ const App = () => {
 
     return styles;
   };
-
+// 画像の変更
   const shuffleImages = () => {
     setImageError(false);
     setDisplayImages(prev =>
@@ -287,62 +282,168 @@ const App = () => {
     console.error('Failed to load image:', selectedImage);
   };
 
+  // アニメーション
+  const pageFade = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: { duration: 0.5 } },
+    exit: { opacity: 0, transition: { duration: 0.5 } },
+  };
+
+  const slideUpDown = {
+    initial: { y: "100%" },
+    animate: { y: 0 , transition: { duration: 0.5 } },
+    exit: { y: "-100%" , transition: { duration: 0.5 } },
+  };
+
+  const slideDownUp = {
+    initial: { y: "-100%" },
+    animate: { y: 0 , transition: { duration: 0.5 } },
+    exit: { y: "100%" , transition: { duration: 0.5 } },
+  };
+
+  const overlayUp = {
+    initial: { y: "-100%" },
+    animate: { y: 0 , transition: { duration: 0.5 } },
+    exit: { opacity: 0 , transition: { duration: 0.5 } },
+  };
+
+  const fadeOut = {
+    initial: { opacity: 1 },
+    animate: { opacity: 0 , transition: { duration: 0.5 } },
+    exit: { opacity: 0, transition: { duration: 0.5 }  },
+  };
+
+  const flip = {
+    initial: { rotateY: 90 },
+    animate: { rotateY: 0 },
+    exit: { rotateY: 90 },
+  };
+
+  const buttonTransition = {
+    type: "spring",
+    stiffness: 300,
+    damping: 25,
+  };
+
+  //光の粒の表示
+  const [lights, setLights] = useState<{ id: number; left: string; duration: number; delay: number }[]>([]);
+  const getRandomLeft = () => `${Math.random() * 100}vw`;
+
+  useEffect(() => {
+    const addLight = () => {
+      const id = Date.now();
+      const newLight = {
+        id,
+        left: getRandomLeft(),
+        duration: 5 + Math.random() * 5,
+        delay: Math.random() * 2,
+      };
+
+      setLights((prevLights) => [...prevLights, newLight]);
+
+      setTimeout(() => {
+        setLights((prevLights) => prevLights.filter((light) => light.id !== id));
+      }, (newLight.duration + newLight.delay) * 1000);
+    };
+
+    const interval = setInterval(addLight, 350);
+
+    return () => clearInterval(interval);
+  }, []);
+
+   //推奨環境
+   if (!browserSupportsSpeechRecognition) {
+    return <span>お使いのブラウザでは音声入力が使用できません:推奨 Google Chrome</span>;
+  } else if (!isMicrophoneAvailable) {
+    return <span>マイクの使用許可をください</span>
+  }
+
   return (
-    <>
+    <AnimatePresence mode="wait">
+      <div>
+      {lights.map((light) => (
+        <span
+          key={light.id}
+          className="light"
+          style={{
+            left: light.left,
+            animationDuration: `${light.duration}s`,
+            animationDelay: `${light.delay}s`,
+          }}
+        />
+      ))}
       {dispState === 'title' &&
-        <div className='container'>
+        <motion.div
+          key="title"
+          variants={pageFade}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          className="container"
+      >
           <img src={wandImage} alt="Magic Wand" className="wand" />
           <h1 className="title">SpellWorker</h1>
           <p className="subtitle">Stay Awake with Magic</p>
-          <div className="spell-button" onClick={() => setDispState('start')}>Get Ready Casting pell</div>
-        </div>
+          <div className="spell-button" onClick={() => setDispState('start')}>Click to Ready Spell</div>
+        </motion.div>
       }
       {dispState === 'start' &&
-        <div className='container'>
-          <img src={wandImage} alt="Magic Wand" className="wand" />
-          <h1 className="title">SpellWorker</h1>
-          <div className="spell-button" onClick={() => {
+        <motion.div
+          key="start"
+          variants={pageFade}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+          className="container"
+        >
+          <h1 className="title">呪文</h1>
+          <p className="subtitle" onClick={() => {
             setDispState('work')
             const interval = setInterval(() => {
               setCounter(prev => prev + 1);
               captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
             }, 1000);
             return () => clearInterval(interval);
-          }}>Cast Opening Spell</div>
-        </div>
+          }}>Cast Opening Spell</p>
+        </motion.div>
       }
-      {dispState === 'work' &&
-        <>
-          <div>
-            <div className="header">
-              <img src={wandImage} alt="Magic Wand" className="headerlogo" />
-              <h1 className="hedaertitle" onClick={() => setPyres("True")}>SpellWorker</h1>
+      {dispState === 'work'&&
+          <motion.div
+            key="work"
+            variants={pageFade}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="work-container"
+          >
+            <div className='work-page'>
+              <h1 className="work-title">SpellWorker</h1>
+              <p className="work-subtitle" onClick={() => setPyres("True")}>From the start of Work …</p>
             </div>
-
             <div className="timer-container">
               <div className="timer-display">
                 <div className="time-section">
-                  <span className="time-label">Hours</span>
                   <div className="time-box">
                     <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</span>
                   </div>
+                  <span className="time-label">HOURS</span>
                 </div>
 
                 <span className="separator">:</span>
 
                 <div className="time-section">
-                  <span className="time-label">Minutes</span>
                   <div className="time-box">
                     <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</span>
                   </div>
+                  <span className="time-label">MINUTES</span>
                 </div>
                 <span className="separator">:</span>
 
                 <div className="time-section">
-                  <span className="time-label">Seconds</span>
                   <div className="time-box">
                     <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
                   </div>
+                  <span className="time-label">SECONDS</span>
                 </div>
               </div>
             </div>
@@ -350,36 +451,51 @@ const App = () => {
             <div className="controls">
               <button onClick={() => window.location.reload()} className="control-button">
                 <div className="button-icon reset-icon"><RxCross2 /></div>
-                <span className="button-text">終了</span>
-                <span className="button-subtext">{JSON.stringify(usedSpell.void1)}</span>
+                <div className='control-text'>
+                  <span className="button-text">終了</span>
+                  <span className="button-subtext">{JSON.stringify(usedSpell.void1)}</span>
+                </div>
               </button>
 
               {stopCounter.current! < 0 ?
-                <button className="control-button" onClick={() => stopCount()}>
-                  <div className="button-icon stop-icon"> <TbPlayerPause /> </div>
-                  <span className="button-text">停止</span>
-                  <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
-                </button>
+                <div className="control-button">
+                  <div className="button-icon stop-icon"  onClick={() => stopCount()}> <TbPlayerPause /> </div>
+                  <div className='control-text'>
+                    <span className="button-text">停止</span>
+                    <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+                  </div>
+                </div>
                 :
-                <button className="control-button" onClick={() => startCount()}>
-                  <div className="button-icon start-icon"> <PiPlayBold /></div>
-                  <span className="button-text">開始</span>
-                  <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
-                </button>
+                <div className="control-button">
+                  <div className="button-icon start-icon" onClick={() => startCount()}> <PiPlayBold /></div>
+                  <div className='control-text'>
+                    <span className="button-text">開始</span>
+                    <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+                  </div>
+                </div>
               }
             </div>
-            {/* <div>呪文一覧</div>
-            <div>{JSON.stringify(usedSpell)}</div>
-            <div>{finalTranscript}</div>
-            <div>{JSON.stringify(usedSpell.void1)}</div>
-            <div>{JSON.stringify(usedSpell.void2)}</div> */}
-          </div>
-        </>
+          </motion.div>
+          
       }
       {
         dispState === 'sleep' &&
-        <>
-          <div>
+          <motion.div
+            key="sleep"
+            variants={overlayUp}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="container"
+            style={{
+              position: 'absolute',
+              top: 0,
+              left: 0,
+              width: '100%',
+              height: '100%',
+              zIndex: 10, // 'sleep' コンテンツが 'work' コンテンツの上に重なるように設定
+            }}
+          >
             <div className="alermback">
               {imageError ? (
                 <div>
@@ -404,10 +520,11 @@ const App = () => {
               </div>
               <div className="alerm-subtext">Casting Spell To Stop The Alarm</div>
             </div>
-          </div>
-        </>
+          </motion.div>
+
       }
-    </>
+      </div>
+    </AnimatePresence>
   )
 }
 
