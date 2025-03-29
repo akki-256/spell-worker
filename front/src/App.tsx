@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
 const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/setup'
-const NITRO_HANDLING_URL = 'ws://localhost:3000/spell'
+const NITRO_HANDLING_URL = 'http://localhost:3000/sse'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
@@ -39,14 +39,6 @@ type nitrosMessageType = {
   "isMoving": boolean
 }
 
-type handleType = {
-  "user": string,
-  "message": string | handleMessageType
-}
-
-type handleMessageType = {
-  "isMoving": boolean
-}
 interface ImageStyle {
   width: string;
   height: string;
@@ -69,7 +61,7 @@ const App = () => {
   const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
   const [pyRes, setPyres] = useState("False")
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
-  const [handling, setHandling] = useState<string>('{"user":"default","message":"default"}')
+  const [handling, setHandling] = useState<string>('false')
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
   const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
@@ -124,7 +116,7 @@ const App = () => {
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
     nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
-    const handlingSSE = new EventSource('http://localhost:3000/sse')
+    const handlingSSE = new EventSource(NITRO_HANDLING_URL)
     handlingSSE.onmessage = (event) => setHandling(event.data)
     const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
     sendUsedSpell.send(JSON.stringify(usedSpell))
@@ -148,28 +140,20 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    console.log(handling)
-    // if (typeof handling !== 'undefined') {
-    //   const Jsonhandling: handleType = JSON.parse(handling)
-    //   //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-    //   if ((dispState === 'start') && (Jsonhandling.message as handleMessageType)?.isMoving && (finalTranscript.includes('か'))) {
-    //     setDispState('work')
-    //     const interval = setInterval(() => {
-    //       setCounter(prev => prev + 1);
-    //       captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-    //     }, 1000);
-    //     return () => clearInterval(interval);
-    //   }
-    // }
-  }, [(dispState === 'start'), handling]);
-
-  useEffect(() => {
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
       const sendMessage = finalTranscript.replace(/\s+/g, '')
       nitroSocketRef.current?.send(sendMessage)
       resetTranscript();
     } else if (nitroSocketRef.current?.readyState !== WebSocket.OPEN) {
       nitroSocketRef.current?.reconnect()
+    } else if (dispState === 'start' && handling === 'true' && finalTranscript.includes('か')) {
+      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行{
+      setDispState('work')
+      const interval = setInterval(() => {
+        setCounter(prev => prev + 1);
+        captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+      }, 1000);
+      return () => clearInterval(interval);
     }
   }, [finalTranscript])
 
