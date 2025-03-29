@@ -65,10 +65,10 @@ interface DisplayImage {
 const App = () => {
   const [counter, setCounter] = useState(0)//カウントアップ用
   const stopCounter = useRef(-1)
-  const [nitroRes, setnitroRes] = useState<string>('{"user":"default","message":"default"}')
-  const [pyRes, setPyres] = useState(false)
+  // const [nitroRes, setnitroRes] = useState<string>('{"user":"default","message":"default"}')
+  const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
+  const [pyRes, setPyres] = useState("False")
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
-  const handleRef = useRef<ReconnectingWebSocket>(null)
   const [handling, setHandling] = useState<string>('{"user":"default","message":"default"}')
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
@@ -124,7 +124,8 @@ const App = () => {
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
     nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
-    handleRef.current = setServer(NITRO_HANDLING_URL, setHandling)
+    const handlingSSE = new EventSource('http://localhost:3000/sse')
+    handlingSSE.onmessage = (event) => setHandling(event.data)
     const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
     sendUsedSpell.send(JSON.stringify(usedSpell))
 
@@ -147,18 +148,19 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    if (typeof handling !== 'undefined') {
-      const Jsonhandling: handleType = JSON.parse(handling)
-      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-      if ((dispState === 'start') && (Jsonhandling.message as handleMessageType)?.isMoving && (finalTranscript.includes('か'))) {
-        setDispState('work')
-        const interval = setInterval(() => {
-          setCounter(prev => prev + 1);
-          captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-        }, 1000);
-        return () => clearInterval(interval);
-      }
-    }
+    console.log(handling)
+    // if (typeof handling !== 'undefined') {
+    //   const Jsonhandling: handleType = JSON.parse(handling)
+    //   //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
+    //   if ((dispState === 'start') && (Jsonhandling.message as handleMessageType)?.isMoving && (finalTranscript.includes('か'))) {
+    //     setDispState('work')
+    //     const interval = setInterval(() => {
+    //       setCounter(prev => prev + 1);
+    //       captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+    //     }, 1000);
+    //     return () => clearInterval(interval);
+    //   }
+    // }
   }, [(dispState === 'start'), handling]);
 
   useEffect(() => {
@@ -172,9 +174,10 @@ const App = () => {
   }, [finalTranscript])
 
   useEffect(() => {
-    if (typeof nitroRes !== 'undefined') {
-      const JsonNitro: nitroResType = JSON.parse(nitroRes)
-      switch ((JsonNitro.message as nitrosMessageType)?.magicSuccess) {
+    console.log('nitroRes', nitroRes)
+    if ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
+      console.log('magicSuccess', (nitroRes.message as nitrosMessageType)?.magicSuccess)
+      switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
         case 'void1': window.location.reload()
           break
         case 'void2': stopCount()
@@ -198,10 +201,10 @@ const App = () => {
   }, [nitroRes])
 
   useEffect(() => {
-    if (pyRes) {
+    if (pyRes === "True") {
       setDispState('sleep')
       shuffleImages();
-      if (pyRes) play()
+      if (sound) play()
     }
   }, [pyRes])
 
@@ -329,7 +332,7 @@ const App = () => {
           <div>
             <div className="header">
               <img src={wandImage} alt="Magic Wand" className="headerlogo" />
-              <h1 className="hedaertitle" onClick={() => setPyres(true)}>SpellWorker</h1>
+              <h1 className="hedaertitle" onClick={() => setPyres("True")}>SpellWorker</h1>
             </div>
 
             <div className="timer-container">
@@ -412,7 +415,7 @@ const App = () => {
               )}
             </div>
             <div className='alermspell-container'>
-              <div onClick={() => { setDispState('work'); stop(), setPyres(false) }} className="alerm-text">
+              <div onClick={() => { setDispState('work'); stop(), setPyres("False") }} className="alerm-text">
                 呪文
               </div>
               <div className="alerm-subtext">Casting Spell To Stop The Alarm</div>
