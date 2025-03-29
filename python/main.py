@@ -54,15 +54,15 @@ async def analyze_video(frame: UploadFile = File(...)):
         if elapsed_time >= sleep_threshold:
             print("居眠りしています")
             send_discord_alert()
-            return {"status": True}
+            return {"status": "True"}
         print("目をつぶっています")
-        return {"status": False}
+        return {"status": "False"}
     else:
         # 目が開いているので時間をリセット
         closed_eye_time = 0
         last_eye_open_time = time.time()
         print("起きています")
-        return {"status": False}
+        return {"status": "False"}
 
 
 class RequestData(BaseModel):
