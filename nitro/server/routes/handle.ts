@@ -1,19 +1,26 @@
 import { getIsMoving } from "./stick.post";
+import { EventEmitter } from "events";
 
-// WebSocket: 呪文と音声テキストの取得と魔法判定の返却 (ws: /spell)
+// 加速度が変わるたびにフロントにsseで送信
 export default defineEventHandler(async (event) => {
   const eventStream = createEventStream(event);
+  const eventEmitter = new EventEmitter();
+
+  const push = (isMoving: boolean) => {
+    eventStream.push(`${isMoving}`);
+  };
+
+  eventEmitter.on("stickRun", push);
 
   const interval = setInterval(async () => {
     // 杖の振り判定の取得
     const isMoving: boolean = await getIsMoving();
-    await eventStream.push(`${isMoving}`);
+    eventEmitter.emit("stickRun", isMoving);
   }, 100);
 
   eventStream.onClosed(async () => {
     clearInterval(interval);
+    eventEmitter.off("stickRun", push);
     await eventStream.close();
   });
-
-  return eventStream.send();
 });
