@@ -1,24 +1,35 @@
-import { getIsMoving } from "./stick.post";
+import { getIsMoving } from './stick.post';
+import { eventEmitter } from '~/utils/sendStick';
 
-// WebSocket: 呪文と音声テキストの取得と魔法判定の返却 (ws: /spell)
-export default defineWebSocketHandler({
-    open(peer) {
-        peer.send({ user: "server", message: "open" });
-    },
-    message: async (peer) => {
-        try {
-            // 杖の振り判定の取得
-            const isMoving: boolean = getIsMoving();
+// 加速度が変わるたびにフロントにsseで送信
+export default defineEventHandler(async (event) => {
+  const eventStream = createEventStream(event);
 
-            peer.send({
-                user: "server",
-                message: { isMoving: isMoving },
-            });
-        } catch (error) {
-            peer.send({ user: "server", message: `Error: ${error.message}` });
-        }
-    },
-    close(peer) {
-        peer.send({ user: "server", message: "close" });
-    },
+  console.log('stickRun start');
+
+  // const push = (isMoving: boolean) => {
+  //   console.log('stickRun push', isMoving);
+  //   eventStream.push(JSON.stringify(isMoving));
+  // };
+
+  // eventEmitter.on('stickRun', push);
+  console.log('stickRun push', 'eventEmitter.on');
+
+  eventEmitter.on('stickRun', async ({ isMoving }) => {
+    console.log('stickRun push', isMoving);
+    await eventStream.push(JSON.stringify(isMoving));
+  });
+
+  // const interval = setInterval(async () => {
+  //   // 杖の振り判定の取得
+  //   const isMoving: boolean = await getIsMoving();
+  //   eventEmitter.emit('stickRun', isMoving);
+  //   console.log('stickRun', isMoving);
+  // }, 100);
+
+  eventStream.onClosed(async () => {
+    // eventEmitter.off('stickRun', push);
+    await eventStream.close();
+  });
+  return eventStream.send();
 });

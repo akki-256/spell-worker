@@ -35,10 +35,12 @@ export default defineWebSocketHandler({
         : null;
       //   console.log("magicSuccess", magicSuccess);
 
-      peer.send({
+      const sendData = {
         user: "server",
         message: { magicSuccess: magicSuccess, isMoving: isMoving },
-      });
+      }
+      peer.send(JSON.stringify(sendData));
+
     } catch (error) {
       peer.send({ user: "server", message: `Error: ${error.message}` });
     }

@@ -7,16 +7,16 @@ import useSound from 'use-sound'
 import defaultAlarmSound from '../default-alarm-sound.mp3'
 import { captureAndSendPY } from './component/captureandsend'
 import wandImage from "../public/SpellWorker Wand.svg";
-import "@fontsource/MedievalSharp";
 import "../src/App.css";
+import "@fontsource/MedievalSharp";
 import { RxCross2 } from "react-icons/rx";
 import { PiPlayBold } from "react-icons/pi";
 import { TbPlayerPause } from "react-icons/tb";
 import { motion, AnimatePresence } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
-const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/:setup'
-const NITRO_HANDLING_URL = 'ws://localhost:3000/spell'
+const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/setup'
+const NITRO_HANDLING_URL = 'http://localhost:3000/sse'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
@@ -30,8 +30,13 @@ const settimer = ((count: number) => {
 export const usedSpell = setUpSpell(2)//#########ToDo########### 本来は魔法の種類だけある
 
 type nitroResType = {
-  magicSuccess: string
-  isMoving: boolean
+  "user": string,
+  "message": string | nitrosMessageType
+}
+
+type nitrosMessageType = {
+  "magicSuccess": string | null,
+  "isMoving": boolean
 }
 
 interface ImageStyle {
@@ -52,11 +57,11 @@ interface DisplayImage {
 const App = () => {
   const [counter, setCounter] = useState(0)//カウントアップ用
   const stopCounter = useRef(-1)
-  const [nitroRes, setnitroRes] = useState<nitroResType>()
-  const [pyRes, setPyres] = useState('')
+  // const [nitroRes, setnitroRes] = useState<string>('{"user":"default","message":"default"}')
+  const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
+  const [pyRes, setPyres] = useState("False")
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
-  const handleRef = useRef<ReconnectingWebSocket>(null)
-  const [handling, setHandling] = useState(false)
+  const [handling, setHandling] = useState<string>('false')
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
   const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
@@ -111,7 +116,8 @@ const App = () => {
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
     nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
-    handleRef.current = setServer(NITRO_HANDLING_URL, setHandling)
+    const handlingSSE = new EventSource(NITRO_HANDLING_URL)
+    handlingSSE.onmessage = (event) => setHandling(event.data)
     const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
     sendUsedSpell.send(JSON.stringify(usedSpell))
 
@@ -134,8 +140,14 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-    //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
-    if ((dispState === 'start') && handling && (finalTranscript.includes('スペルワーカー'))) {
+    if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
+      const sendMessage = finalTranscript.replace(/\s+/g, '')
+      nitroSocketRef.current?.send(sendMessage)
+      resetTranscript();
+    } else if (nitroSocketRef.current?.readyState !== WebSocket.OPEN) {
+      nitroSocketRef.current?.reconnect()
+    } else if (dispState === 'start' && handling === 'true' && finalTranscript.includes('か')) {
+      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行{
       setDispState('work')
       const interval = setInterval(() => {
         setCounter(prev => prev + 1);
@@ -143,37 +155,42 @@ const App = () => {
       }, 1000);
       return () => clearInterval(interval);
     }
-  }, [dispState === 'start' && handling])
-
-  useEffect(() => {
-    if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
-      const sendMessage = finalTranscript.replace(/\s+/g, '')
-      nitroSocketRef.current?.send(sendMessage)
-      resetTranscript();
-    } else if (nitroSocketRef.current?.readyState !== WebSocket.OPEN) {
-      nitroSocketRef.current?.reconnect()
-    }
   }, [finalTranscript])
 
   useEffect(() => {
-    if (nitroRes?.magicSuccess === 'void1') {
-      window.location.reload()
-    } else if (nitroRes?.magicSuccess === 'void2') {
-      stopCount()
-    } else if (nitroRes?.magicSuccess === 'void3') {
-      startCount()
-    } else if (nitroRes?.magicSuccess === 'void4' && sound?.isPlayng) {
-      stopalerm()
+    console.log('nitroRes', nitroRes)
+    if ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
+      console.log('magicSuccess', (nitroRes.message as nitrosMessageType)?.magicSuccess)
+      switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
+        case 'void1': window.location.reload()
+          break
+        case 'void2': stopCount()
+          break
+        case 'void3': startCount()
+          break
+        case 'void4':
+          if (sound.isPlayng) stopalerm()
+          break
+      }
+      // if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void1') {
+      //   window.location.reload()
+      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void2') {
+      //   stopCount()
+      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void3') {
+      //   startCount()
+      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void4' && sound?.isPlayng) {
+      //   stopalerm()
+      // }
     }
   }, [nitroRes])
 
   useEffect(() => {
-    if (pyRes === '眠っています') {
+    if (pyRes === "True") {
       setDispState('sleep')
       shuffleImages();
-      if (pyRes) play()
+      if (sound) play()
     }
-  }, [pyRes === '眠っています'])
+  }, [pyRes])
 
   //画像の設定 
   const images = ["/img1.svg", "/img2.svg", "/img3.svg", "/img4.svg", "/img5.svg", "/img6.svg"];
@@ -401,7 +418,7 @@ const App = () => {
           >
             <div className='work-page'>
               <h1 className="work-title">SpellWorker</h1>
-              <p className="work-subtitle" onClick={() => setPyres('眠っています')}>From the start of Work …</p>
+              <p className="work-subtitle" onClick={() => setPyres("True")}>From the start of Work …</p>
             </div>
             <div className="timer-container">
               <div className="timer-display">
@@ -498,7 +515,7 @@ const App = () => {
               )}
             </div>
             <div className='alermspell-container'>
-              <div onClick={() => { setDispState('work'); stop(), setPyres('起きています') }} className="alerm-text">
+              <div onClick={() => { setDispState('work'); stop(), setPyres("False") }} className="alerm-text">
                 呪文
               </div>
               <div className="alerm-subtext">Casting Spell To Stop The Alarm</div>
