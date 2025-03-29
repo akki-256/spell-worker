@@ -4,10 +4,9 @@ import { getIsMoving } from "./stick.post";
 export default defineEventHandler(async (event) => {
   const eventStream = createEventStream(event);
 
-  // 杖の振り判定の取得
-  const isMoving: boolean = getIsMoving();
-
   const interval = setInterval(async () => {
+    // 杖の振り判定の取得
+    const isMoving: boolean = await getIsMoving();
     await eventStream.push(`${isMoving}`);
   }, 100);
 
