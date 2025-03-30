@@ -19,7 +19,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
 const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/setup'
-const NITRO_HANDLING_URL = 'http://localhost:3000/sse'
+const NITRO_HANDLING_URL = 'http://localhost:3000/handle'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
@@ -30,7 +30,7 @@ const settimer = ((count: number) => {
   return [h, m, s]
 });
 
-export const usedSpell = setUpSpell(2)//#########ToDo########### 本来は魔法の種類だけある
+export const usedSpell = setUpSpell(4)//#########ToDo########### 本来は魔法の種類だけある
 
 type nitroResType = {
   "user": string,
@@ -58,8 +58,8 @@ interface DisplayImage {
 }
 
 const App = () => {
-  const [counter, setCounter] = useState(0)//カウントアップ用
-  const stopCounter = useRef(-1)
+  const [counter, setCounter] = useState<number>(0)//カウントアップ用
+  const stopCounter = useRef([0, 0])
   // const [nitroRes, setnitroRes] = useState<string>('{"user":"default","message":"default"}')
   const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
   const [pyRes, setPyres] = useState("False")
@@ -82,39 +82,19 @@ const App = () => {
     loop: true
   })
 
-  // const captureFrame = async () => {
-  //   if (!videoRef.current) return;
-  //   if (!canvasRef.current) return;
-
-  //   canvasRef.current.width = videoRef.current.videoWidth
-  //   canvasRef.current.height = videoRef.current.videoHeight
-  //   const ctx = ctxRef.current ?? canvasRef.current.getContext("2d");
-  //   if (!ctx) return;
-  //   ctxRef.current = ctx;
-  //   ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-
-  //   const blob = await new Promise<Blob | null>((resolve) => {
-  //     canvasRef.current.toBlob((b) => resolve(b), 'image/jpeg')
-  //   })
-  //   if (blob) {
-  //     sendPy(PYTHON_SLEEP_URL, blob).then(respons => {
-  //       if (typeof (respons) == 'string') setPyres(respons)
-  //     })
-  //   }
-  // };
-
   const stopCount = () => {
-    stopCounter.current = counter
+    stopCounter.current = [counter, 1]
   }
   const startCount = () => {
-    setCounter(stopCounter.current)
-    stopCounter.current = -1
+    setCounter(stopCounter.current[0])
+    stopCounter.current[1] = 0
   }
-  const stopalerm = () => {
+  const stopAlerm = () => {
     stop()
+    startCount()
     setDispState('work')
   }
-
+  
   //初回レンダリング時
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
@@ -143,27 +123,26 @@ const App = () => {
   }, [])
 
   useEffect(() => {
+
+    console.log('fainaltranscript', finalTranscript)
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
       const sendMessage = finalTranscript.replace(/\s+/g, '')
       nitroSocketRef.current?.send(sendMessage)
       resetTranscript();
     } else if (nitroSocketRef.current?.readyState !== WebSocket.OPEN) {
       nitroSocketRef.current?.reconnect()
-    } else if (dispState === 'start' && handling === 'true' && finalTranscript.includes('か')) {
-      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行{
+    }
+    if (dispState === 'start' && handling === 'true' && finalTranscript.includes('スペルワーカー')) {
+      console.log('workに移動')
+      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
       setDispState('work')
-      const interval = setInterval(() => {
-        setCounter(prev => prev + 1);
-        captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-      }, 1000);
-      return () => clearInterval(interval);
+      setCounter(0)
     }
   }, [finalTranscript])
 
   useEffect(() => {
-    console.log('nitroRes', nitroRes)
-    if ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
-      console.log('magicSuccess', (nitroRes.message as nitrosMessageType)?.magicSuccess)
+    if (dispState === 'work' && (nitroRes.message as nitrosMessageType)?.magicSuccess) {
+      console.log((nitroRes.message as nitrosMessageType)?.magicSuccess);
       switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
         case 'void1': window.location.reload()
           break
@@ -171,29 +150,21 @@ const App = () => {
           break
         case 'void3': startCount()
           break
-        case 'void4':
-          if (sound.isPlayng) stopalerm()
-          break
       }
-      // if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void1') {
-      //   window.location.reload()
-      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void2') {
-      //   stopCount()
-      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void3') {
-      //   startCount()
-      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void4' && sound?.isPlayng) {
-      //   stopalerm()
-      // }
+    }
+    if ((dispState === 'sleep') && (nitroRes.message as nitrosMessageType)?.magicSuccess === 'void4') {
+      stopAlerm()
     }
   }, [nitroRes])
 
   useEffect(() => {
     if (pyRes === "True") {
+      stopCount()
       setDispState('sleep')
+      shuffleImages();
       if (sound) play()
     }
   }, [pyRes])
-
 
   // アニメーション
   const pageFade0 = ({
@@ -238,8 +209,8 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-   //推奨環境
-   if (!browserSupportsSpeechRecognition) {
+  //推奨環境
+  if (!browserSupportsSpeechRecognition) {
     return <span>お使いのブラウザでは音声入力が使用できません:推奨 Google Chrome</span>;
   } else if (!isMicrophoneAvailable) {
     return <span>マイクの使用許可をください</span>
@@ -311,7 +282,7 @@ const App = () => {
               <div className="timer-display">
                 <div className="time-section">
                   <div className="time-box">
-                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</span>
+                    <span className='time-value'>{settimer(stopCounter.current[1] === 0 ? counter : stopCounter.current[0])[0]}</span>
                   </div>
                   <span className="time-label">HOURS</span>
                 </div>
@@ -320,7 +291,7 @@ const App = () => {
 
                 <div className="time-section">
                   <div className="time-box">
-                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</span>
+                    <span className='time-value'>{settimer(stopCounter.current[1] === 0 ? counter : stopCounter.current[0])[1]}</span>
                   </div>
                   <span className="time-label">MINUTES</span>
                 </div>
@@ -328,7 +299,7 @@ const App = () => {
 
                 <div className="time-section">
                   <div className="time-box">
-                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
+                    <span className='time-value'>{settimer(stopCounter.current[1] === 0 ? counter : stopCounter.current[0])[2]}</span>
                   </div>
                   <span className="time-label">SECONDS</span>
                 </div>
@@ -343,8 +314,7 @@ const App = () => {
                   <span className="button-subtext">{JSON.stringify(usedSpell.void1)}</span>
                 </div>
               </button>
-
-              {stopCounter.current! < 0 ?
+              {stopCounter.current[1] === 0 ?
                 <motion.div
                 className="control-button"
                 initial={{ scale: 1, rotate: 0 }}
