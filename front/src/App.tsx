@@ -237,7 +237,7 @@ const App = () => {
           animate="animate"
           exit="exit"
           className="container"
-      >
+        >
           <img src={wandImage} alt="Magic Wand" className="wand" />
           <h1 className="title">SpellWorker</h1>
           <p className="subtitle">Stay Awake with Magic</p>
@@ -303,6 +303,7 @@ const App = () => {
                   </div>
                   <span className="time-label">MINUTES</span>
                 </div>
+                
                 <span className="separator">:</span>
 
                 <div className="time-section">
@@ -381,19 +382,6 @@ const App = () => {
                           {JSON.stringify(usedSpell.void3)}
                       </motion.span>
                     </div>
-                  </motion.div>
-
-                  {/* テキスト部分 */}
-                  <div className="control-text">
-                    <span className="button-text">開始</span>
-                    <motion.span
-                      className="button-subtext"
-                      animate={{ opacity: [1, 0, 1] }}
-                      transition={{ duration: 0.8 }}
-                    >
-                      {JSON.stringify(usedSpell.void2)}
-                    </motion.span>
-                  </div>
                 </motion.div>
               }
             </div>
