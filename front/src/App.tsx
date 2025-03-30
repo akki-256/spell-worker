@@ -7,6 +7,7 @@ import useSound from 'use-sound'
 import defaultAlarmSound from '../default-alarm-sound.mp3'
 import { captureAndSendPY } from './component/captureandsend'
 import wandImage from "../public/SpellWorker Wand.svg";
+import favicon from "../public/favicon.svg";
 import cloud from "../public/cloud.svg";
 import "../src/App.css";
 import "@fontsource/MedievalSharp";
@@ -217,6 +218,7 @@ const App = () => {
 
   return (
     <div>
+      <link rel="icon" href={favicon} />
       {lights.map((light) => (
         <span
           key={light.id}
