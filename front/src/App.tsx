@@ -16,7 +16,7 @@ import { motion, AnimatePresence } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
 const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/setup'
-const NITRO_HANDLING_URL = 'http://localhost:3000/sse'
+const NITRO_HANDLING_URL = 'http://localhost:3000/handle'
 const PYTHON_SLEEP_URL = 'http://localhost:8000/analyze'
 const N_OF_USED_SPELL = 4
 
@@ -27,7 +27,7 @@ const settimer = ((count: number) => {
   return [h, m, s]
 });
 
-export const usedSpell = setUpSpell(2)//#########ToDo########### 本来は魔法の種類だけある
+export const usedSpell = setUpSpell(4)//#########ToDo########### 本来は魔法の種類だけある
 
 type nitroResType = {
   "user": string,
@@ -61,7 +61,7 @@ const App = () => {
   const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
   const [pyRes, setPyres] = useState("False")
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
-  const [handling, setHandling] = useState<string>('false')
+  const [handling, setHandling] = useState<string>('true')
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
   const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
@@ -79,27 +79,6 @@ const App = () => {
     loop: true
   })
 
-  // const captureFrame = async () => {
-  //   if (!videoRef.current) return;
-  //   if (!canvasRef.current) return;
-
-  //   canvasRef.current.width = videoRef.current.videoWidth
-  //   canvasRef.current.height = videoRef.current.videoHeight
-  //   const ctx = ctxRef.current ?? canvasRef.current.getContext("2d");
-  //   if (!ctx) return;
-  //   ctxRef.current = ctx;
-  //   ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
-
-  //   const blob = await new Promise<Blob | null>((resolve) => {
-  //     canvasRef.current.toBlob((b) => resolve(b), 'image/jpeg')
-  //   })
-  //   if (blob) {
-  //     sendPy(PYTHON_SLEEP_URL, blob).then(respons => {
-  //       if (typeof (respons) == 'string') setPyres(respons)
-  //     })
-  //   }
-  // };
-
   const stopCount = () => {
     stopCounter.current = counter
   }
@@ -107,96 +86,9 @@ const App = () => {
     setCounter(stopCounter.current)
     stopCounter.current = -1
   }
-  const stopalerm = () => {
+  const stopAlerm = () => {
     stop()
     setDispState('work')
-  }
-
-  //初回レンダリング時
-  useEffect(() => {
-    SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
-    nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
-    const handlingSSE = new EventSource(NITRO_HANDLING_URL)
-    handlingSSE.onmessage = (event) => setHandling(event.data)
-    const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
-    sendUsedSpell.send(JSON.stringify(usedSpell))
-
-    let stream: MediaStream;
-    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
-      .then((s) => {
-        stream = s
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream
-          videoRef.current.play()
-        }
-      })
-
-    return () => {
-      if (stream) {
-        stream.getTracks().forEach((track) => track.stop());
-      }
-      SpeechRecognition.stopListening()
-    };
-  }, [])
-
-  useEffect(() => {
-    if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
-      const sendMessage = finalTranscript.replace(/\s+/g, '')
-      nitroSocketRef.current?.send(sendMessage)
-      resetTranscript();
-    } else if (nitroSocketRef.current?.readyState !== WebSocket.OPEN) {
-      nitroSocketRef.current?.reconnect()
-    } else if (dispState === 'start' && handling === 'true' && finalTranscript.includes('か')) {
-      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行{
-      setDispState('work')
-      const interval = setInterval(() => {
-        setCounter(prev => prev + 1);
-        captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [finalTranscript])
-
-  useEffect(() => {
-    console.log('nitroRes', nitroRes)
-    if ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
-      console.log('magicSuccess', (nitroRes.message as nitrosMessageType)?.magicSuccess)
-      switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
-        case 'void1': window.location.reload()
-          break
-        case 'void2': stopCount()
-          break
-        case 'void3': startCount()
-          break
-        case 'void4':
-          if (sound.isPlayng) stopalerm()
-          break
-      }
-      // if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void1') {
-      //   window.location.reload()
-      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void2') {
-      //   stopCount()
-      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void3') {
-      //   startCount()
-      // } else if ((nitroRes?.message as nitrosMessageType)?.magicSuccess === 'void4' && sound?.isPlayng) {
-      //   stopalerm()
-      // }
-    }
-  }, [nitroRes])
-
-  useEffect(() => {
-    if (pyRes === "True") {
-      setDispState('sleep')
-      shuffleImages();
-      if (sound) play()
-    }
-  }, [pyRes])
-
-  //推奨環境
-  if (!browserSupportsSpeechRecognition) {
-    return <span>お使いのブラウザでは音声入力が使用できません:推奨 Google Chrome</span>;
-  } else if (!isMicrophoneAvailable) {
-    return <span>マイクの使用許可をください</span>
   }
 
   const images = ["/img1.svg", "/img2.svg", "/img3.svg", "/img4.svg", "/img5.svg", "/img6.svg"];
@@ -287,6 +179,82 @@ const App = () => {
     console.error('Failed to load image:', selectedImage);
   };
 
+  //初回レンダリング時
+  useEffect(() => {
+    SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
+    nitroSocketRef.current = setServer(NITRO_SPELLSUCCESS_URL, setnitroRes)
+    const handlingSSE = new EventSource(NITRO_HANDLING_URL)
+    handlingSSE.onmessage = (event) => setHandling(event.data)
+    const sendUsedSpell = setServer(NITRO_SETUP_SPELL_URL)
+    sendUsedSpell.send(JSON.stringify(usedSpell))
+
+    let stream: MediaStream;
+    navigator.mediaDevices.getUserMedia({ video: true, audio: false })
+      .then((s) => {
+        stream = s
+        if (videoRef.current) {
+          videoRef.current.srcObject = stream
+          videoRef.current.play()
+        }
+      })
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((track) => track.stop());
+      }
+      SpeechRecognition.stopListening()
+    };
+  }, [])
+
+  useEffect(() => {
+
+    console.log('fainaltranscript', finalTranscript)
+    if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
+      const sendMessage = finalTranscript.replace(/\s+/g, '')
+      nitroSocketRef.current?.send(sendMessage)
+      resetTranscript();
+    } else if (nitroSocketRef.current?.readyState !== WebSocket.OPEN) {
+      nitroSocketRef.current?.reconnect()
+    }
+    if (dispState === 'start' && handling === 'true' && finalTranscript.includes('スペルワーカー')) {
+      console.log('workに移動')
+      //タイトルをクリックした後、杖を振って魔法を言ったらwork画面に移行
+      setDispState('work')
+      setCounter(0)
+    }
+  }, [finalTranscript])
+
+  useEffect(() => {
+    if ((dispState === 'work' || dispState === 'sleep') && (nitroRes.message as nitrosMessageType)?.magicSuccess) {
+      console.log((nitroRes.message as nitrosMessageType)?.magicSuccess);
+      switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
+        case 'void1': window.location.reload()
+          break
+        case 'void2': stopCount()
+          break
+        case 'void3': startCount()
+          break
+        case 'void4': stopAlerm()
+          break
+      }
+    }
+  }, [nitroRes])
+
+  useEffect(() => {
+    if (pyRes === "True") {
+      setDispState('sleep')
+      shuffleImages();
+      if (sound) play()
+    }
+  }, [pyRes])
+
+  //推奨環境
+  if (!browserSupportsSpeechRecognition) {
+    return <span>お使いのブラウザでは音声入力が使用できません:推奨 Google Chrome</span>;
+  } else if (!isMicrophoneAvailable) {
+    return <span>マイクの使用許可をください</span>
+  }
+
   return (
     <>
       {dispState === 'title' &&
@@ -294,7 +262,17 @@ const App = () => {
           <img src={wandImage} alt="Magic Wand" className="wand" />
           <h1 className="title">SpellWorker</h1>
           <p className="subtitle">Stay Awake with Magic</p>
-          <div className="spell-button" onClick={() => setDispState('start')}>Get Ready Casting pell</div>
+          <div className="spell-button" onClick={() => {
+            setDispState('start')
+            console.log('インターバルを定義前');
+            const interval = setInterval(() => {
+              console.log("setInterval running"); // 確認用ログ
+              setCounter(prev => prev + 1);
+              captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+            }, 1000);
+            return () => clearInterval(interval);
+          }
+          }>Get Ready Casting pell</div>
         </div>
       }
       {dispState === 'start' &&
@@ -364,15 +342,13 @@ const App = () => {
                 <button className="control-button" onClick={() => startCount()}>
                   <div className="button-icon start-icon"> <PiPlayBold /></div>
                   <span className="button-text">開始</span>
-                  <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
+                  <span className="button-subtext">{stopCounter.current === -1
+                    ? JSON.stringify(usedSpell.void2)
+                    : JSON.stringify(usedSpell.void3
+                    )}</span>
                 </button>
               }
             </div>
-            {/* <div>呪文一覧</div>
-            <div>{JSON.stringify(usedSpell)}</div>
-            <div>{finalTranscript}</div>
-            <div>{JSON.stringify(usedSpell.void1)}</div>
-            <div>{JSON.stringify(usedSpell.void2)}</div> */}
           </div>
         </>
       }

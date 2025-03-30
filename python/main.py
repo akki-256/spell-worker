@@ -53,7 +53,6 @@ async def analyze_video(frame: UploadFile = File(...)):
 
         if elapsed_time >= sleep_threshold:
             print("居眠りしています")
-            send_discord_alert()
             return {"status": "True"}
         print("目をつぶっています")
         return {"status": "False"}
