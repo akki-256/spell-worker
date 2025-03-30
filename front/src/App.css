@@ -44,7 +44,7 @@ html, body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  margin-top: 27vh;
   height: 100vmin;
   text-align: center;
   z-index: 10;
@@ -69,12 +69,11 @@ z-index: 10;
 font-size: 2.5vw;/* 40px */
 color: #9F86C0;
 margin-top: 1.6vh;
-margin-bottom: 7vh; /* 5px */
+margin-bottom: 5vh; /* 5px */
 z-index: 10;
 }
 
 .spell-button {
-/* font-family: "MedievalSharp", sans-serif !important; */
 border: solid 1px #9F86C0;
 background-color: #5E2F8F;
 padding: 2.8vh 3vw;/*22px 50px; */
@@ -89,13 +88,34 @@ background-color: #694293;
 z-index: 10;
 }
 
+.start-contaimer{
+  margin-bottom: 0.1vh;
+}
+
+.wand-container{
+  border-radius: 1.3vw;
+  width: 4.5vw;
+  height: 4.5vw;
+  background-color: #23232E;
+  border: solid 1px rgba(0,0,0,0.1);
+  background-clip: padding-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1.5vw; /* アイコンとテキストの間隔を調整 */
+  z-index: 10;
+}
+.wand-icon{
+  width: 5vh;
+  height: 5vh;
+}
+
 /* メインCSS */
 .work-container {
 display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-/* text-align: center; */
 z-index: 10;
 }
 
@@ -196,7 +216,6 @@ z-index: 10;
 }
 
 .button-icon {
-  font-size: 3vw;
   border-radius: 1.3vw;
   width: 4.5vw;
   height: 4.5vw;
@@ -248,11 +267,13 @@ z-index: 10;
 }
 
 .reset-icon {
+font-size: 3vw;
 color: #FF4757;
 z-index: 10;
 }
 
 .stop-icon {
+font-size: 3vw;
 color: #FFD32A;  
 z-index: 10;
 }
@@ -315,5 +336,6 @@ z-index: 10;
   margin-bottom: 2.5vh;
 }
 .alerm-icon {
+  font-size: 3vw;
   color: #FFD32A;
 }
