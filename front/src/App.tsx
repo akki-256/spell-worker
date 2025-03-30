@@ -61,7 +61,7 @@ const App = () => {
   const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
   const [pyRes, setPyres] = useState("False")
   const nitroSocketRef = useRef<ReconnectingWebSocket>(null)//webSocket使用用
-  const [handling, setHandling] = useState<string>('true')
+  const [handling, setHandling] = useState<string>('false')
   const [dispState, setDispState] = useState<string>('title')
   const videoRef = useRef<HTMLVideoElement | null>(document.createElement('video'))
   const canvasRef = useRef<HTMLCanvasElement>(document.createElement('canvas'))
