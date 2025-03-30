@@ -181,6 +181,9 @@ const App = () => {
     console.error('Failed to load image:', selectedImage);
   };
 
+  useEffect(() => {
+    console.log('handling', handling)
+  }, [handling])
   //初回レンダリング時
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
@@ -227,7 +230,7 @@ const App = () => {
   }, [finalTranscript])
 
   useEffect(() => {
-    if ((dispState === 'work' || dispState === 'sleep') && (nitroRes.message as nitrosMessageType)?.magicSuccess) {
+    if (dispState === 'work' && (nitroRes.message as nitrosMessageType)?.magicSuccess) {
       console.log((nitroRes.message as nitrosMessageType)?.magicSuccess);
       switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
         case 'void1': window.location.reload()
@@ -236,9 +239,10 @@ const App = () => {
           break
         case 'void3': startCount()
           break
-        case 'void4': stopAlerm()
-          break
       }
+    }
+    if ((dispState === 'sleep') && (nitroRes.message as nitrosMessageType)?.magicSuccess === 'void4') {
+      stopAlerm()
     }
   }, [nitroRes])
 
