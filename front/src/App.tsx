@@ -137,7 +137,7 @@ const App = () => {
 
     return styles;
   };
-// 画像の変更
+  // 画像の変更
   const shuffleImages = () => {
     setImageError(false);
     setDisplayImages(prev =>
@@ -258,26 +258,26 @@ const App = () => {
 
   const slideUpDown = {
     initial: { y: "100%" },
-    animate: { y: 0 , transition: { duration: 0.5 } },
-    exit: { y: "-100%" , transition: { duration: 0.5 } },
+    animate: { y: 0, transition: { duration: 0.5 } },
+    exit: { y: "-100%", transition: { duration: 0.5 } },
   };
 
   const slideDownUp = {
     initial: { y: "-100%" },
-    animate: { y: 0 , transition: { duration: 0.5 } },
-    exit: { y: "100%" , transition: { duration: 0.5 } },
+    animate: { y: 0, transition: { duration: 0.5 } },
+    exit: { y: "100%", transition: { duration: 0.5 } },
   };
 
   const overlayUp = {
     initial: { y: "-100%" },
-    animate: { y: 0 , transition: { duration: 0.5 } },
-    exit: { opacity: 0 , transition: { duration: 0.5 } },
+    animate: { y: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, transition: { duration: 0.5 } },
   };
 
   const fadeOut = {
     initial: { opacity: 1 },
-    animate: { opacity: 0 , transition: { duration: 0.5 } },
-    exit: { opacity: 0, transition: { duration: 0.5 }  },
+    animate: { opacity: 0, transition: { duration: 0.5 } },
+    exit: { opacity: 0, transition: { duration: 0.5 } },
   };
 
   const flip = {
@@ -318,8 +318,8 @@ const App = () => {
     return () => clearInterval(interval);
   }, []);
 
-   //推奨環境
-   if (!browserSupportsSpeechRecognition) {
+  //推奨環境
+  if (!browserSupportsSpeechRecognition) {
     return <span>お使いのブラウザでは音声入力が使用できません:推奨 Google Chrome</span>;
   } else if (!isMicrophoneAvailable) {
     return <span>マイクの使用許可をください</span>
@@ -328,61 +328,57 @@ const App = () => {
   return (
     <AnimatePresence mode="wait">
       <div>
-      {lights.map((light) => (
-        <span
-          key={light.id}
-          className="light"
-          style={{
-            left: light.left,
-            animationDuration: `${light.duration}s`,
-            animationDelay: `${light.delay}s`,
-          }}
-        />
-      ))}
-      {dispState === 'title' &&
-        <motion.div
-          key="title"
-          variants={pageFade}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="container"
-      >
-          <img src={wandImage} alt="Magic Wand" className="wand" />
-          <h1 className="title">SpellWorker</h1>
-          <p className="subtitle">Stay Awake with Magic</p>
-          <div className="spell-button" onClick={() => {
-            setDispState('start')
-            const interval = setInterval(() => {
-              setCounter(prev => prev + 1);
-              captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-            }, 1000);
-            return () => clearInterval(interval);
-          }
-          }>Get Ready Casting pell</div>
-        </div>
-      }
-      {dispState === 'start' &&
-        <motion.div
-          key="start"
-          variants={pageFade}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="container"
-        >
-          <h1 className="title">呪文</h1>
-          <p className="subtitle" onClick={() => {
-            setDispState('work')
-            const interval = setInterval(() => {
-              setCounter(prev => prev + 1);
-              captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-            }, 1000);
-            return () => clearInterval(interval);
-          }}>Cast Opening Spell</p>
-        </motion.div>
-      }
-      {dispState === 'work'&&
+        {lights.map((light) => (
+          <span
+            key={light.id}
+            className="light"
+            style={{
+              left: light.left,
+              animationDuration: `${light.duration}s`,
+              animationDelay: `${light.delay}s`,
+            }}
+          />
+        ))}
+        {dispState === 'title' &&
+          <motion.div
+            key="title"
+            variants={pageFade}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="container"
+          >
+            <img src={wandImage} alt="Magic Wand" className="wand" />
+            <h1 className="title">SpellWorker</h1>
+            <p className="subtitle">Stay Awake with Magic</p>
+            <div className="spell-button" onClick={() => {
+              setDispState('start')
+              const interval = setInterval(() => {
+                setCounter(prev => prev + 1);
+                captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+              }, 1000);
+              return () => clearInterval(interval);
+            }
+            }>Get Ready Casting pell
+            </div>
+          </motion.div>
+        }
+        {dispState === 'start' &&
+          <motion.div
+            key="start"
+            variants={pageFade}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="container"
+          >
+            <h1 className="title">呪文</h1>
+            <p className="subtitle" onClick={() => {
+              setDispState('work')
+            }}>Cast Opening Spell</p>
+          </motion.div>
+        }
+        {dispState === 'work' &&
           <motion.div
             key="work"
             variants={pageFade}
@@ -434,7 +430,7 @@ const App = () => {
 
               {stopCounter.current! < 0 ?
                 <div className="control-button">
-                  <div className="button-icon stop-icon"  onClick={() => stopCount()}> <TbPlayerPause /> </div>
+                  <div className="button-icon stop-icon" onClick={() => stopCount()}> <TbPlayerPause /> </div>
                   <div className='control-text'>
                     <span className="button-text">停止</span>
                     <span className="button-subtext">{JSON.stringify(usedSpell.void2)}</span>
@@ -444,31 +440,14 @@ const App = () => {
                 <button className="control-button" onClick={() => startCount()}>
                   <div className="button-icon start-icon"> <PiPlayBold /></div>
                   <span className="button-text">開始</span>
-                  <span className="button-subtext">{stopCounter.current === -1
-                    ? JSON.stringify(usedSpell.void2)
-                    : JSON.stringify(usedSpell.void3
-                    )}</span>
+                  <span className="button-subtext">{JSON.stringify(usedSpell.void3)}</span>
                 </button>
               }
             </div>
-          </div>
-        </>
-                <div className="control-button">
-                  <div className="button-icon start-icon" onClick={() => startCount()}> <PiPlayBold /></div>
-                  <div className='control-text'>
-                    <span className="button-text">開始</span>
-                    <span className="button-subtext"{stopCounter.current === -1
-                    ? JSON.stringify(usedSpell.void2)
-                    : JSON.stringify(usedSpell.void3
-                    )}</span>
-                  </div>
-                </div>
-              }
-            </div>
-          </motion.div>
-      }
-      {
-        dispState === 'sleep' &&
+          </motion.div >
+        }
+        {
+          dispState === 'sleep' &&
           <motion.div
             key="sleep"
             variants={overlayUp}
@@ -511,9 +490,9 @@ const App = () => {
             </div>
           </motion.div>
 
-      }
-      </div>
-    </AnimatePresence>
+        }
+      </div >
+    </AnimatePresence >
   )
 }
 
