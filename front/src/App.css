@@ -5,9 +5,9 @@ html, body {
   padding: 0;
   color: white;
   font-family: "MedievalSharp", sans-serif !important;
-  background: linear-gradient(to bottom, #1A1B2E, #2B1B45);
   overflow: hidden;
-}
+  background: linear-gradient(to bottom, #1A1B2E, #2B1B45);
+} 
 
 .light {
   position: absolute;
@@ -18,6 +18,7 @@ html, body {
   border-radius: 50%;
   opacity: 0;
   animation: rise linear infinite;
+  z-index: 1;
 }
 
 @keyframes rise {
@@ -40,12 +41,13 @@ html, body {
 /*タイトルcss*/
 
 .container {
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-height: 100vmin;
-text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vmin;
+  text-align: center;
+  z-index: 10;
 }
 
 .wand {
@@ -53,12 +55,14 @@ text-align: center;
   width: 6vw;
   height: auto;
   margin-bottom: 0.1vh;
+  z-index: 10;
 }
 
 .title {
 font-size: 5vw;/* 80px */
 margin-top: 4.5vh;
 margin-bottom: 0.2vh;/* 5px */
+z-index: 10;
 }
 
 .subtitle {
@@ -66,6 +70,7 @@ font-size: 2.5vw;/* 40px */
 color: #9F86C0;
 margin-top: 1.6vh;
 margin-bottom: 7vh; /* 5px */
+z-index: 10;
 }
 
 .spell-button {
@@ -76,10 +81,12 @@ padding: 2.8vh 3vw;/*22px 50px; */
 font-size: 2.2vw;    
 color: white;
 border-radius: 5vw; 
+z-index: 10;
 }
 
 .spell-button:hover {
 background-color: #694293;
+z-index: 10;
 }
 
 /* メインCSS */
@@ -88,8 +95,8 @@ display: flex;
 flex-direction: column;
 align-items: center;
 justify-content: center;
-text-align: center;
-z-index: 5; 
+/* text-align: center; */
+z-index: 10;
 }
 
 .work-page {
@@ -98,16 +105,19 @@ z-index: 5;
   justify-content: center;
   margin-top: 14vh;
   padding-bottom: 0.5vh;  /* 下部の余白を少なくする */
+  z-index: 10;
 }
 
 .work-title {
   font-size: 5.6vw;
   margin:auto;
+  z-index: 10;
 }
 
 .work-subtitle {
   font-size: 2.8vw;
   color: #9F86C0;
+  z-index: 10;
 }
 
 .timer-container {
@@ -116,42 +126,49 @@ align-items: center;
 justify-content: center;
 gap: 0.5vh;  /* 下の余白を減らすために gap を減少 */
 padding-bottom: 0.5vh;  /* 下部の余白を少なくする */
+z-index: 10;
 }
 
 .timer-display {
 display: flex;
 align-items: center;
 gap: 2vw;
+z-index: 10;
 }
 
 .time-section {
 display: flex;
 flex-direction: column;
 align-items: center;
+z-index: 10;
 }
 
 .time-label {
 font-size: 1.25vw;
 margin-top: 2vh;
+z-index: 10;
 }
 
 .time-box {
 width: 11vw;
 height: 11vw;
-border-radius: 1.5vw;
+border-radius: 2vw;
 display: flex;
 align-items: center;
 justify-content: center;
-border: 0.1vw solid white;
+border: 0.2vw solid white;
+z-index: 10;
 }
 
 .time-value {
 font-size: 5vw;
+z-index: 10;
 }
 
 .separator {
 font-size: 5.6vw;
 margin-bottom: 6vh;
+z-index: 10;
 }
 
 .controls {
@@ -159,14 +176,15 @@ display: flex;
 justify-content: center;
 gap: 1vw;
 margin-top: 6vh;
+z-index: 10;
 }
 
 .control-button {
-  background-color: #343341;
-  border: solid 1px rgba(159,134,192,0.3);
+  background: linear-gradient(to right, #333148, #28273C);
+  border: solid 1.5px rgba(159,134,192,0.3);
   width: 23vw;
-  height: 17vh;
-  border-radius: 1.5vw;
+  height: 15vh;
+  border-radius: 2vw;
   color: white;
   display: flex;
   align-items: center; /* アイコンとテキストを縦方向に並べるため */
@@ -174,11 +192,12 @@ margin-top: 6vh;
   box-sizing: border-box; /* 内部のパディングやボーダーもサイズに含める */
   gap: 0.3vw;
   padding: 2.2vh 2.3vw;
+  z-index: 10;
 }
 
 .button-icon {
-  font-size: 4vw;
-  border-radius: 1.5vw;
+  font-size: 3vw;
+  border-radius: 1.3vw;
   width: 4.5vw;
   height: 4.5vw;
   background-color: #23232E;
@@ -188,6 +207,7 @@ margin-top: 6vh;
   align-items: center;
   justify-content: center;
   margin-right: 1.5vw; /* アイコンとテキストの間隔を調整 */
+  z-index: 10;
 }
 
 .button-text {
@@ -196,6 +216,10 @@ margin-top: 6vh;
   white-space: normal;  /* 文字列が長い場合、折り返しを許可 */
   word-wrap: break-word; /* 長い単語があれば折り返し */
   line-height: 1.2; /* 行間の調整 */
+  display: flex;
+  flex-flow: column;
+  text-align: center;
+  z-index: 10;
 }
 
 .button-subtext {
@@ -205,54 +229,91 @@ margin-top: 6vh;
   white-space: normal;  /* 文字列が長い場合、折り返しを許可 */
   word-wrap: break-word; /* 長い単語があれば折り返し */
   flex-direction: row;
+  z-index: 10;
 }
 
 .control-text {
   display: flex;
   flex-flow: column;
+  align-items: center; /* 中央揃え */
+  text-align: center;
+  flex: 1;
+  z-index: 10;
 }
+
 .control-button span {
   word-wrap: break-word; /* 必要に応じて折り返す */
   overflow: hidden; /* はみ出しを防ぐ */
+  z-index: 10;
 }
 
 .reset-icon {
 color: #FF4757;
+z-index: 10;
 }
 
 .stop-icon {
 color: #FFD32A;  
+z-index: 10;
 }
 
 .start-icon {
+width: 4vw;
+height: 4vw;
 color: #2ED573;
+font-size: 2.5vw;
+z-index: 10;
+background-color: rgba(94,47,143,0.4);
+border: solid 1px #9F86C0;
 }
 
 .play-pause-icon {
 color: #facc15;
+z-index: 10;
 }
 
 /* アラームcss */ 
-.alerm-back {
+.alerm-container {
   overflow: hidden; 
 }
 .alerm-img {
-  position: absolute;
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 20;
 }
 
 .alermspell-container{
-text-align: center;
-position: absolute;
-top: 40%;
-width: 100%;
-z-Index: 10;
+  position: fixed;
+  text-align: center;
+  align-items: center; 
+  top: 47%;
+  left: 36%;
+  height: 48%;
+  width: 28%;
+  background-color: rgba(51, 49, 71, 0.65);
+  z-Index: 30;
+  border-radius: 1.8vw;
+  margin: auto;
 }
 
 .alerm-text {
-font-size: 6vw;
-color: red;
+  font-size: 2vw;
+  color: #FF4757;
+  z-Index: 30;
 }
 
-.alerm-subtext {
-font-size: 3vw;
+.danger-icon{
+  margin-top: 4vh;
+  color: #FF4757;
+  font-size: 5vw;
+}
+
+.alerm-button{
+  margin:auto;
+  margin-top: 6vh;
+  margin-bottom: 2.5vh;
+}
+.alerm-icon {
+  color: #FFD32A;
 }
