@@ -55,8 +55,8 @@ interface DisplayImage {
 }
 
 const App = () => {
-  const [counter, setCounter] = useState(0)//カウントアップ用
-  const stopCounter = useRef(-1)
+  const [counter, setCounter] = useState<number>(0)//カウントアップ用
+  const stopCounter = useRef([0, 0])
   // const [nitroRes, setnitroRes] = useState<string>('{"user":"default","message":"default"}')
   const [nitroRes, setnitroRes] = useState<nitroResType>({ "user": "default", "message": "default" })
   const [pyRes, setPyres] = useState("False")
@@ -80,14 +80,15 @@ const App = () => {
   })
 
   const stopCount = () => {
-    stopCounter.current = counter
+    stopCounter.current = [counter, 1]
   }
   const startCount = () => {
-    setCounter(stopCounter.current)
-    stopCounter.current = -1
+    setCounter(stopCounter.current[0])
+    stopCounter.current[1] = 0
   }
   const stopAlerm = () => {
     stop()
+    startCount()
     setDispState('work')
   }
 
@@ -243,6 +244,7 @@ const App = () => {
 
   useEffect(() => {
     if (pyRes === "True") {
+      stopCount()
       setDispState('sleep')
       shuffleImages();
       if (sound) play()
@@ -395,7 +397,7 @@ const App = () => {
               <div className="timer-display">
                 <div className="time-section">
                   <div className="time-box">
-                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[0]}</span>
+                    <span className='time-value'>{settimer(stopCounter.current[1] === 0 ? counter : stopCounter.current[0])[0]}</span>
                   </div>
                   <span className="time-label">HOURS</span>
                 </div>
@@ -404,7 +406,7 @@ const App = () => {
 
                 <div className="time-section">
                   <div className="time-box">
-                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[1]}</span>
+                    <span className='time-value'>{settimer(stopCounter.current[1] === 0 ? counter : stopCounter.current[0])[1]}</span>
                   </div>
                   <span className="time-label">MINUTES</span>
                 </div>
@@ -412,7 +414,7 @@ const App = () => {
 
                 <div className="time-section">
                   <div className="time-box">
-                    <span className='time-value'>{settimer(stopCounter.current < 0 ? counter : stopCounter.current)[2]}</span>
+                    <span className='time-value'>{settimer(stopCounter.current[1] === 0 ? counter : stopCounter.current[0])[2]}</span>
                   </div>
                   <span className="time-label">SECONDS</span>
                 </div>
@@ -428,7 +430,7 @@ const App = () => {
                 </div>
               </button>
 
-              {stopCounter.current! < 0 ?
+              {stopCounter.current[1] === 0 ?
                 <div className="control-button">
                   <div className="button-icon stop-icon" onClick={() => stopCount()}> <TbPlayerPause /> </div>
                   <div className='control-text'>
