@@ -43,21 +43,6 @@ type nitrosMessageType = {
   "isMoving": boolean
 }
 
-interface ImageStyle {
-  width: string;
-  height: string;
-  top: string;
-  left: string;
-  transform: string;
-  opacity: number;
-  zIndex: number;
-}
-
-interface DisplayImage {
-  url: string;
-  style: ImageStyle;
-}
-
 const App = () => {
   const [counter, setCounter] = useState<number>(0)//カウントアップ用
   const stopCounter = useRef([0, 0])
@@ -244,7 +229,14 @@ const App = () => {
           <h1 className="title">SpellWorker</h1>
           <p className="subtitle">Stay Awake with Magic</p>
           {dispState === 'title' &&
-            <div className="spell-button" onClick={() => setDispState('start')}>Click to Ready Spell</div>          
+            <div className="spell-button" onClick={() => {
+              setDispState('start')
+              const interval = setInterval(() => {
+                setCounter(prev => prev + 1);
+                captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+              }, 1000);
+              return () => clearInterval(interval);
+            }} >Click to Ready Spell</div>          
           }
           {dispState === 'start' &&
             <motion.div
@@ -257,18 +249,14 @@ const App = () => {
             >
               <button onClick={() => {
                 setDispState('work')
-                const interval = setInterval(() => {
-                  setCounter(prev => prev + 1);
-                  captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-                }, 1000);
-                return () => clearInterval(interval);
+                setCounter(0)
               }} className="control-button">
                 <div className = "wand-container">
                 <img src={wandImage} alt="Magic Wand" className="wand-icon" />
                 </div>
                 <div className='control-text'>
                   <span className="button-text">作業開始</span>
-                  <span className="button-subtext">スペルワーカー</span>
+                  <span className="button-subtext">"スペルワーカー"</span>
                 </div>
               </button>
             </motion.div>
