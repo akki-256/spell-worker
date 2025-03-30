@@ -30,7 +30,7 @@ const settimer = ((count: number) => {
   return [h, m, s]
 });
 
-export const usedSpell = setUpSpell(4)//#########ToDo########### 本来は魔法の種類だけある
+export const usedSpell = setUpSpell(N_OF_USED_SPELL)
 
 type nitroResType = {
   "user": string,
@@ -94,7 +94,7 @@ const App = () => {
     startCount()
     setDispState('work')
   }
-  
+
   //初回レンダリング時
   useEffect(() => {
     SpeechRecognition.startListening({ continuous: true, language: 'ja' })//音声テキスト化の有効化
@@ -173,12 +173,12 @@ const App = () => {
   });
   const pageFade1 = ({
     initial: { opacity: 0 },
-    animate: { opacity: 1, transition: { duration: 1 ,delay: 1} ,},
+    animate: { opacity: 1, transition: { duration: 1, delay: 1 }, },
     exit: { opacity: 0, transition: { duration: 1 } },
   });
   const pageFade2 = ({
     initial: { opacity: 0 },
-    animate: { opacity: 1, transition: { duration: 1 , delay:5} ,},
+    animate: { opacity: 1, transition: { duration: 1, delay: 5 }, },
     exit: { opacity: 0, transition: { duration: 1 } },
   });
 
@@ -216,7 +216,7 @@ const App = () => {
   }
 
   return (
-      <div>
+    <div>
       {lights.map((light) => (
         <span
           key={light.id}
@@ -340,15 +340,15 @@ const App = () => {
                     <TbPlayerPause />
                   </motion.div>
 
-                    {/* テキスト部分 */}
+                  {/* テキスト部分 */}
                   <div className="control-text">
                     <span className="button-text">停止</span>
                     <motion.span
-                        className="button-subtext"
-                        animate={{ opacity: [1, 0, 1] }}
-                        transition={{ duration: 0.8 }}
-                      >
-                        {JSON.stringify(usedSpell.void2)}
+                      className="button-subtext"
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      {JSON.stringify(usedSpell.void2)}
                     </motion.span>
                   </div>
                 </motion.div>
@@ -357,7 +357,7 @@ const App = () => {
                   className="control-button"
                   onClick={() => startCount()}
                   initial={{ scale: 1, rotate: 0 }}
-                  whileTap={{ scale: 2, rotate: [0,10,20,10,-10,-20,-10,10,20,10,-10,0] }}
+                  whileTap={{ scale: 2, rotate: [0, 10, 20, 10, -10, -20, -10, 10, 20, 10, -10, 0] }}
                   transition={{ duration: 0.3 }}
                 >
                     {/* アイコン部分 */}
@@ -382,6 +382,19 @@ const App = () => {
                       </motion.span>
                     </div>
                   </motion.div>
+
+                  {/* テキスト部分 */}
+                  <div className="control-text">
+                    <span className="button-text">開始</span>
+                    <motion.span
+                      className="button-subtext"
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      {JSON.stringify(usedSpell.void2)}
+                    </motion.span>
+                  </div>
+                </motion.div>
               }
             </div>
             <AnimatePresence>
@@ -429,11 +442,11 @@ const App = () => {
             </div>
             }
             </AnimatePresence>
-          
+
           </motion.div>
-      }
+        }
       </AnimatePresence>
-      </div>
+    </div>
   )
 }
 
