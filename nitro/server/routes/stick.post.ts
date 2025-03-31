@@ -39,9 +39,9 @@ export default defineEventHandler(async (event) => {
 
   return {
     success: true,
-    isMoving: latestIsMoving,
+    isMoving: true,
   };
 });
 
 // WebSocket から取得できるようにする
-export const getIsMoving = () => latestIsMoving;
+export const getIsMoving = () => true;

@@ -16,7 +16,7 @@ import { PiPlayBold } from "react-icons/pi";
 import { TbPlayerPause } from "react-icons/tb";
 import { FiSun } from "react-icons/fi";
 import { FiAlertTriangle } from "react-icons/fi";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence, delay } from "framer-motion";
 
 const NITRO_SPELLSUCCESS_URL = 'ws://localhost:3000/spell'
 const NITRO_SETUP_SPELL_URL = 'ws://localhost:3000/setup'
@@ -109,7 +109,6 @@ const App = () => {
   }, [])
 
   useEffect(() => {
-
     console.log('fainaltranscript', finalTranscript)
     if (finalTranscript !== '' && nitroSocketRef.current?.readyState === WebSocket.OPEN) {
       const sendMessage = finalTranscript.replace(/\s+/g, '')
@@ -130,7 +129,7 @@ const App = () => {
     if (dispState === 'work' && (nitroRes.message as nitrosMessageType)?.magicSuccess) {
       console.log((nitroRes.message as nitrosMessageType)?.magicSuccess);
       switch ((nitroRes.message as nitrosMessageType)?.magicSuccess) {
-        case 'void1': window.location.reload()
+        case 'void1': setDispState('start')
           break
         case 'void2': stopCount()
           break
@@ -154,7 +153,7 @@ const App = () => {
   // アニメーション
   const pageFade0 = ({
     initial: { opacity: 0 },
-    animate: { opacity: 1, transition: { duration: 1  } },
+    animate: { opacity: 1, transition: { duration: 1, delay: 1 } },
     exit: { opacity: 0, transition: { duration: 1 } },
   });
   const pageFade1 = ({
@@ -216,54 +215,54 @@ const App = () => {
         />
       ))}
       <AnimatePresence>
-      {(dispState === 'title'||dispState === 'start')&&
-        <motion.div
-          key="title"
-          variants={pageFade0}
-          initial="initial"
-          animate="animate"
-          exit="exit"
-          className="container"
-        >
-          <img src={wandImage} alt="Magic Wand" className="wand" />
-          <h1 className="title">SpellWorker</h1>
-          <p className="subtitle">Stay Awake with Magic</p>
-          {dispState === 'title' &&
-            <div className="spell-button" onClick={() => {
-              setDispState('start')
-              const interval = setInterval(() => {
-                setCounter(prev => prev + 1);
-                captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
-              }, 1000);
-              return () => clearInterval(interval);
-            }} >Click to Ready Spell</div>          
-          }
-          {dispState === 'start' &&
-            <motion.div
-              key="start"
-              variants={pageFade0}
-              initial="initial"
-              animate="animate"
-              exit="exit"
-              className='start-contaimer'
-            >
-              <button onClick={() => {
-                setDispState('work')
-                setCounter(0)
-              }} className="control-button">
-                <div className = "wand-container">
-                <img src={wandImage} alt="Magic Wand" className="wand-icon" />
-                </div>
-                <div className='control-text'>
-                  <span className="button-text">作業開始</span>
-                  <span className="button-subtext">"スペルワーカー"</span>
-                </div>
-              </button>
-            </motion.div>
-          }
-        </motion.div>
-      }
-      {(dispState === 'work' || dispState === 'sleep')&&
+        {(dispState === 'title' || dispState === 'start') &&
+          <motion.div
+            key="title"
+            variants={pageFade0}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+            className="container"
+          >
+            <img src={wandImage} alt="Magic Wand" className="wand" />
+            <h1 className="title">SpellWorker</h1>
+            <p className="subtitle">Stay Awake with Magic</p>
+            {dispState === 'title' &&
+              <div className="spell-button" onClick={() => {
+                setDispState('start')
+                const interval = setInterval(() => {
+                  setCounter(prev => prev + 1);
+                  captureAndSendPY(videoRef, canvasRef, ctxRef, PYTHON_SLEEP_URL, setPyres)
+                }, 1000);
+                return () => clearInterval(interval);
+              }} >Click to Ready Spell</div>
+            }
+            {dispState === 'start' &&
+              <motion.div
+                key="start"
+                variants={pageFade0}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                className='start-contaimer'
+              >
+                <button onClick={() => {
+                  setDispState('work')
+                  setCounter(0)
+                }} className="control-button">
+                  <div className="wand-container">
+                    <img src={wandImage} alt="Magic Wand" className="wand-icon" />
+                  </div>
+                  <div className='control-text'>
+                    <span className="button-text">作業開始</span>
+                    <span className="button-subtext">"スペルワーカー"</span>
+                  </div>
+                </button>
+              </motion.div>
+            }
+          </motion.div>
+        }
+        {(dispState === 'work' || dispState === 'sleep') &&
           <motion.div
             key="work"
             variants={pageFade1}
@@ -293,7 +292,7 @@ const App = () => {
                   </div>
                   <span className="time-label">MINUTES</span>
                 </div>
-                
+
                 <span className="separator">:</span>
 
                 <div className="time-section">
@@ -306,7 +305,7 @@ const App = () => {
             </div>
 
             <div className="controls">
-              <button onClick={() => window.location.reload()} className="control-button">
+              <button onClick={() => setDispState('start')} className="control-button">
                 <div className="button-icon reset-icon"><RxCross2 /></div>
                 <div className='control-text'>
                   <span className="button-text">終了</span>
@@ -315,12 +314,12 @@ const App = () => {
               </button>
               {stopCounter.current[1] === 0 ?
                 <motion.div
-                className="control-button"
-                onClick={() => stopCount()}
-                initial={{ scale: 1, rotate: 0 }}
-                whileTap={{ scale: 2, rotate: [0,10,20,10,-10,-20,-10,10,20,10,-10,0] }}
-                transition={{ duration: 0.3 }}
-              >
+                  className="control-button"
+                  onClick={() => stopCount()}
+                  initial={{ scale: 1, rotate: 0 }}
+                  whileTap={{ scale: 2, rotate: [0, 10, 20, 10, -10, -20, -10, 10, 20, 10, -10, 0] }}
+                  transition={{ duration: 0.3 }}
+                >
                   {/* アイコン部分 */}
                   <motion.div
                     className="button-icon stop-icon"
@@ -351,74 +350,74 @@ const App = () => {
                   whileTap={{ scale: 2, rotate: [0, 10, 20, 10, -10, -20, -10, 10, 20, 10, -10, 0] }}
                   transition={{ duration: 0.3 }}
                 >
-                    {/* アイコン部分 */}
-                    <motion.div
-                      className="button-icon start-icon"
-                      whileTap={{ scale: 1.1 }}
-                      animate={{ opacity: [1, 0.5, 1] }}
-                      transition={{ duration: 0.3 }}
-                    >
-                      <PiPlayBold />
-                    </motion.div>
+                  {/* アイコン部分 */}
+                  <motion.div
+                    className="button-icon start-icon"
+                    whileTap={{ scale: 1.1 }}
+                    animate={{ opacity: [1, 0.5, 1] }}
+                    transition={{ duration: 0.3 }}
+                  >
+                    <PiPlayBold />
+                  </motion.div>
 
-                      {/* テキスト部分 */}
-                    <div className="control-text">
-                      <span className="button-text">開始</span>
-                      <motion.span
-                          className="button-subtext"
-                          animate={{ opacity: [1, 0, 1] }}
-                          transition={{ duration: 0.8 }}
-                        >
-                          {JSON.stringify(usedSpell.void3)}
-                      </motion.span>
-                    </div>
+                  {/* テキスト部分 */}
+                  <div className="control-text">
+                    <span className="button-text">開始</span>
+                    <motion.span
+                      className="button-subtext"
+                      animate={{ opacity: [1, 0, 1] }}
+                      transition={{ duration: 0.8 }}
+                    >
+                      {JSON.stringify(usedSpell.void3)}
+                    </motion.span>
+                  </div>
                 </motion.div>
               }
             </div>
             <AnimatePresence>
-            {dispState === 'sleep' &&
-              <div className='alerm-container'>
-              <motion.img
-                key="sleep"
-                animate={{
-                  x: ['-19%'],
-                  y:['90%','25%'], // 画像が左から右に流れる
-                }}
-                transition={{
-                  ease: "easeOut",
-                  duration: 5, // アニメーションの時間（秒）
-                }}
-                exit={{
-                  y: ['25%', '90%'],  // 逆方向に動かす
-                  transition: {
-                    delay: 0.5,
-                    ease: "easeIn",
-                    duration: 5, // 逆アニメーションの時間（秒）
-                  },
-                }}
-                className="alerm-img"
-                src={cloud} // 使用する画像を指定
-                alt="Moving Cloud" // 画像の代替テキスト
-            />
-              <motion.div
-                variants={pageFade2}
-                initial="initial"
-                animate="animate"
-                exit="exit"
-              className='alermspell-container'
-              >  
-                <div className="danger-icon"><FiAlertTriangle /></div>
-                <div className='alerm-text'>睡眠を検出しました</div>
-                <button onClick={() => { setDispState('work'); startCount(), setPyres("False") }} className="control-button alerm-button">
-                  <div className="button-icon alerm-icon"><FiSun /></div>
-                  <div className='control-text'>
-                    <span className="button-text">目覚める</span>
-                    <span className="button-subtext">{JSON.stringify(usedSpell.void4)}</span>
-                  </div>
-                </button>
-              </motion.div>
-            </div>
-            }
+              {dispState === 'sleep' &&
+                <div className='alerm-container'>
+                  <motion.img
+                    key="sleep"
+                    animate={{
+                      x: ['-19%'],
+                      y: ['90%', '25%'], // 画像が左から右に流れる
+                    }}
+                    transition={{
+                      ease: "easeOut",
+                      duration: 5, // アニメーションの時間（秒）
+                    }}
+                    exit={{
+                      y: ['25%', '90%'],  // 逆方向に動かす
+                      transition: {
+                        delay: 0.5,
+                        ease: "easeIn",
+                        duration: 5, // 逆アニメーションの時間（秒）
+                      },
+                    }}
+                    className="alerm-img"
+                    src={cloud} // 使用する画像を指定
+                    alt="Moving Cloud" // 画像の代替テキスト
+                  />
+                  <motion.div
+                    variants={pageFade2}
+                    initial="initial"
+                    animate="animate"
+                    exit="exit"
+                    className='alermspell-container'
+                  >
+                    <div className="danger-icon"><FiAlertTriangle /></div>
+                    <div className='alerm-text'>睡眠を検出しました</div>
+                    <button onClick={() => { setDispState('work'); startCount(), setPyres("False") }} className="control-button alerm-button">
+                      <div className="button-icon alerm-icon"><FiSun /></div>
+                      <div className='control-text'>
+                        <span className="button-text">目覚める</span>
+                        <span className="button-subtext">{JSON.stringify(usedSpell.void4)}</span>
+                      </div>
+                    </button>
+                  </motion.div>
+                </div>
+              }
             </AnimatePresence>
 
           </motion.div>
