@@ -12,8 +12,8 @@ float volt_x, volt_y, volt_z, accel_x, accel_y, accel_z;
 float angle_x, angle_y;
 
 // WiFi情報
-const char* ssid = "SET-Wireless-AP";
-const char* password = "Wlan@SyskenNet#0";
+const char* ssid = "XXXXXXXXXX";
+const char* password = "XXXXXXXXXX";
 const char* host = "10.4.13.154";  // サーバーのIPアドレス
 const int httpPort = 3000;
 String path = "/stick";
